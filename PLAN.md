@@ -95,8 +95,11 @@ Acceptance criteria:
 
 ## Open decisions
 
-1. Whether the Phase 1 quality gate runs MagFace alongside SCRFD, or piggybacks on the
-   AdaFace/Ir-50 fallback path first (measure cost of the extra forward pass).
+1. ~~Quality gate implementation~~ — **decided (2026-10-06):** ship the dependency-free
+   heuristic FIQA-lite assessor (`HeuristicQualityAssessor`) behind the `QualityAssessor`
+   seam now, so the pipeline runs end-to-end without extra weights; add the MagFace
+   feature-magnitude assessor when its weights are fetched, and measure its extra
+   forward-pass cost then. AdaFace feature-norm stays the zero-cost fallback.
 2. Code license for Grey-Resolve itself (MIT vs Apache-2.0) — decide before first public
    push; `THIRD_PARTY_NOTICES.md` required either way.
 
