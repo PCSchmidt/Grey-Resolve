@@ -1,84 +1,94 @@
-# Grey-Resolve — Phase 1 Preliminary Results
+# Grey-Resolve — Phase 1 Results
 
-Research prototype. Aggregate metrics from synthetic/local research data only; no real
-operational data. Candidate ranking evaluation — not identity-assertion accuracy.
+Research prototype. Aggregate metrics from local research data only; no real operational
+data. Candidate-ranking evaluation — not identity-assertion accuracy.
 
-**Run:** `benchmarks/out/20261006T175659Z` (2026-10-06). Reproduce with:
-`python benchmarks/evaluate_roc.py --data-root <gallery> --max-identities N --limit K`.
+**Primary run:** `benchmarks/out/20261006T191330Z` (2026-10-06): 138 images / 100 identities
+from the LFW-derived local course gallery (research-only; never redistributed).
+Reproduce: `python benchmarks/evaluate_roc.py --data-root <gallery> --max-identities 100 --limit 2`.
 Raw outputs live in `benchmarks/out/` (gitignored); this file records aggregate metrics only.
+An earlier 50-image pilot run (`20261006T175659Z`) is superseded except where noted.
 
 **Setup.** Backbone: InsightFace SCRFD detection + w600k_r50 ArcFace (512-d). Quality
 gate: heuristic FIQA-lite (sharpness/exposure/size), gate threshold 0.5, operating
-threshold 0.5. Data: 50 images / 10 identities from the LFW-derived local course gallery
-(research-only; never redistributed). Probe-vs-gallery pairs per
-`docs/PORT_INVENTORY.md` §2. This subset is small and easy — see limitations.
+threshold 0.5. Probe-vs-gallery pairs per `docs/PORT_INVENTORY.md` §2.
 
 ## Degraded-input sweep (EER per condition)
 
 | Condition | Severity | EER | FMR@FNMR=1% | Scored probes |
 |---|---|---|---|---|
-| clean | — | 0.000 | 0.000 | 50/50 |
-| brightness | Δ=0.25 | 0.000 | 0.000 | 50/50 |
-| brightness | Δ=0.50 | 0.000 | 0.000 | 50/50 |
-| brightness | Δ=0.75 | 0.028 | 0.039 | 33/50 (17 detection failures) |
-| downsample | ×0.5 | 0.000 | 0.000 | 50/50 |
-| downsample | ×0.25 | 0.000 | 0.000 | 50/50 |
-| downsample | ×0.1 | **0.100** | **0.628** | 45/50 |
-| gaussian_blur | σ=1 | 0.000 | 0.000 | 50/50 |
-| gaussian_blur | σ=3 | 0.000 | 0.000 | 50/50 |
-| gaussian_blur | σ=8 | **0.069** | **0.267** | 42/50 |
-| off_angle | 15° | 0.000 | 0.000 | 50/50 |
-| off_angle | 30° | 0.000 | 0.000 | 50/50 |
-| off_angle | 45° | 0.000 | 0.000 | 50/50 |
+| clean | — | 0.000 | 0.000 | 137/138 |
+| brightness | Δ=0.25 | 0.000 | 0.000 | 137/138 |
+| brightness | Δ=0.50 | 0.005 | 0.000 | 137/138 |
+| brightness | Δ=0.75 | 0.022 | 0.150 | 96/138 (42 detection failures) |
+| downsample | ×0.5 | 0.000 | 0.000 | 137/138 |
+| downsample | ×0.25 | 0.005 | 0.000 | 137/138 |
+| downsample | ×0.1 | 0.046 | **0.873** | 119/138 |
+| gaussian_blur | σ=1 | 0.005 | 0.000 | 137/138 |
+| gaussian_blur | σ=3 | 0.005 | 0.000 | 137/138 |
+| gaussian_blur | σ=8 | **0.078** | **0.547** | 126/138 |
+| off_angle | 15° | 0.000 | 0.000 | 137/138 |
+| off_angle | 30° | 0.000 | 0.000 | 137/138 |
+| off_angle | 45° | 0.014 | 0.256 | 137/138 |
 
-Severity is each operator's own strength parameter; the per-operator grid exists
-because a shared scale is meaningless (an earlier run with severities 0.25/0.5/0.75
-for every operator showed zero effect for blur σ=0.75px and rotation 0.75°).
+Severity is each operator's own strength parameter; the per-operator grid exists because
+a shared scale is meaningless (a pilot run at shared severities 0.25/0.5/0.75 showed zero
+effect for blur σ=0.75px and rotation 0.75°).
 
-## Quality-gate ablation (FMR/FNMR at fixed threshold 0.5)
+## Quality-gate ablation (at fixed operating threshold 0.5)
 
 | Condition | Full FNMR | Gated FNMR | Gate pass rate | Dropped |
 |---|---|---|---|---|
-| clean | 0.056 | **0.036** | 0.94 | 0 |
-| brightness Δ=0.25 | 0.080 | 0.060 | 0.54 | 0 |
-| brightness Δ=0.50 | 0.208 | (too few pass) | 0.02 | 0 |
-| downsample ×0.25 | 0.228 | **0.104** | 0.46 | 0 |
-| gaussian_blur σ=1 | 0.064 | **0.000** | 0.54 | 0 |
-| gaussian_blur σ=3 | 0.376 | **0.000** | 0.04 | 0 |
-| off_angle 15° | 0.068 | 0.045 | 0.94 | 0 |
-| off_angle 45° | 0.096 | 0.100 | 0.98 | 0 |
+| clean | 0.028 | **0.020** | 0.94 | 1 |
+| brightness Δ=0.25 | 0.028 | **0.018** | 0.56 | 1 |
+| brightness Δ=0.50 | 0.108 | **0.000** | 0.04 | 1 |
+| downsample ×0.5 | 0.028 | **0.012** | 0.83 | 1 |
+| downsample ×0.25 | 0.108 | **0.047** | 0.47 | 1 |
+| gaussian_blur σ=1 | 0.033 | **0.011** | 0.50 | 1 |
+| gaussian_blur σ=3 | 0.127 | **0.000** | 0.09 | 1 |
+| off_angle 15° | 0.028 | **0.020** | 0.93 | 1 |
+| off_angle 30° | 0.033 | **0.025** | 0.93 | 1 |
+| off_angle 45° | 0.047 | 0.049 | 0.96 | 1 |
 
-**Finding 1 — the gate works as designed at the operating point.** The quality-passing
-subset's FNMR is lower than the full set in almost every condition and never materially
-worse; where quality is genuinely bad (heavy blur/brightness), the gate rejects most
-probes instead of letting bad matches through.
+Extreme conditions (brightness Δ=0.75, downsample ×0.1, blur σ=8) drive the gate's pass
+rate to ~0; with too few passing probes the gated metrics are reported as `None` rather
+than estimated from noise. FMR = 0 in every cell (see Finding 5).
 
-**Finding 2 — detection failure is a first-class outcome.** At harsh degradation SCRFD
-detects no face at all (17/50 at brightness Δ=0.75, 8/50 at blur σ=8). The harness
-excludes and counts these probes per condition (`n_query_dropped`) rather than aborting.
+## Findings
 
-**Finding 3 — 2D rotation is not a stressor after alignment.** `off_angle` (homography
-rotation up to 45°) has near-zero effect because SCRFD re-detects and `norm_crop`
-re-aligns the face. A meaningful pose stressor needs yaw/pitch (3D) or genuinely
-off-angle imagery — recorded as future work.
+**1 — The quality gate works as designed at the operating point.** The quality-passing
+subset's FNMR is lower than the full set in nearly every condition and never materially
+worse (the sole tie-level exception, off_angle 45° at 0.047→0.049, is noise-level). Where
+quality is genuinely bad the gate rejects almost everything instead of letting bad
+matches through.
 
-**Finding 4 — ranking quality ≠ operating-point calibration.** EER can be 0.0 while
-FNMR at threshold 0.5 is high (downsample ×0.25: EER 0.0, FNMR 0.228): degradation
-compresses score magnitude without breaking ranking. Operational thresholds must be
-calibrated per condition — this is exactly why the ROC/FMR/FNMR framing replaces the
-course project's CMC Hit@N.
+**2 — Detection failure is a first-class outcome.** SCRFD finds no face at all under harsh
+degradation (42/138 probes at brightness Δ=0.75, 12/138 at blur σ=8). The harness excludes
+and counts these per condition (`n_query_dropped`) instead of aborting.
 
-**Finding 5 — this dataset cannot show FMR effects (honest limitation).** FMR = 0 at
-threshold 0.5 in every condition; 10 well-lit frontal identities are too easy for
+**3 — Rotation hurts mildly on a varied set (revised).** The 50-image pilot showed zero
+effect up to 45°; at 100 identities, 45° gives EER 0.014 / FMR@FNMR=1% 0.256. Landmark
+re-alignment (SCRFD + `norm_crop`) neutralizes much of 2D rotation, but not all of it on
+more varied imagery. A hard pose stressor still needs yaw/pitch or genuinely off-angle
+imagery — future work.
+
+**4 — Ranking quality ≠ operating-point calibration.** EER stays near zero while
+FMR@FNMR=1% explodes under severe degradation (downsample ×0.1: EER 0.046 but
+FMR@FNMR=1% = 0.873). Degradation compresses score magnitude without fully breaking
+ranking; operational thresholds must be calibrated per condition. This is why the
+ROC/FMR/FNMR framing replaces the course project's CMC Hit@N.
+
+**5 — This dataset cannot show FMR effects (honest limitation).** FMR = 0 at threshold
+0.5 in every condition, even at 100 identities — well-lit frontal faces are too easy for
 impostor comparisons against ArcFace. The "gate improves FMR at fixed FNMR" claim needs
-a harder, near-tie set — that is the Phase 2 synthetic scenario dataset's job
+hard, near-tie comparisons; that is the Phase 2 synthetic-scenario near-tie evaluation
 (`docs/SYNTHETIC_SCENARIO_SPEC.md`), not something to fake on easy data.
 
 ## Limitations (read before quoting any number)
 
-- 50 images / 10 identities: coarse EER estimates; treat as pipeline validation, not
-  benchmark-grade numbers. A larger run is in progress.
 - Single gallery draw, one seed; no confidence intervals yet.
+- 138 images / 100 identities (many identities have a single image): still coarse for
+  per-condition EER; treat as strong pipeline evidence, not a benchmark-suite number.
 - Heuristic FIQA-lite gate, not measured FIQA (MagFace assessor is planned).
-- All data is LFW-derived research data or synthetic; nothing here transfers to
-  real-world operational accuracy claims.
+- All data is LFW-derived research data; nothing here transfers to real-world operational
+  accuracy claims.
