@@ -51,6 +51,7 @@ class FaceObservation:
     bbox: tuple[float, float, float, float]  # x1, y1, x2, y2
     detection_score: float
     quality: QualityAssessment | None = None
+    landmarks: np.ndarray | None = None  # optional 5-point landmarks [5, 2] for alignment
 
 
 @dataclass(frozen=True)

@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Self
 
 from grey_resolve.types import ContextMetadata
 
@@ -92,7 +93,7 @@ class SqliteMetadataStore:
             context.geo_cluster,
             context.source_platform,
             json.dumps(list(context.text_entities)),
-            datetime.now(timezone.utc).isoformat(),
+            datetime.now(UTC).isoformat(),
         )
         with self._conn:
             self._conn.execute(_UPSERT, row)
@@ -130,7 +131,7 @@ class SqliteMetadataStore:
             self._conn.close()
             self._conn = None  # type: ignore[assignment]
 
-    def __enter__(self) -> "SqliteMetadataStore":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc_info: object) -> None:

@@ -99,13 +99,13 @@ class FaissHNSWIndex:
         """Return (id, cosine) pairs sorted by score descending.
 
         Returns [] for an empty index or k <= 0. At most min(k, size) pairs are
-        returned.
+        returned. The query dimension is validated even for empty indexes.
         """
-        if self.size == 0 or k <= 0:
-            return []
         arr = np.asarray(vector, dtype=np.float32)
         if arr.ndim != 1 or arr.shape[0] != self._dim:
             raise ValueError(f"vector must have shape ({self._dim},), got {arr.shape}")
+        if self.size == 0 or k <= 0:
+            return []
         query = _normalize_rows(arr.reshape(1, -1))
         self._index.hnsw.efSearch = max(self._ef_search, int(k))
         scores, rows = self._index.search(query, min(int(k), self.size))

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 import pytest
@@ -21,6 +21,28 @@ def _unit_vectors(rng: np.random.Generator, n: int, dim: int = EMBEDDING_DIM) ->
     return raw / np.linalg.norm(raw, axis=1, keepdims=True)
 
 
+def _low_rank_unit_vectors(
+    rng: np.random.Generator,
+    basis: np.ndarray,
+    n: int,
+    dim: int = EMBEDDING_DIM,
+) -> np.ndarray:
+    """Random unit-norm [N, dim] vectors with low effective rank.
+
+    Real face/context embeddings occupy a low-dimensional manifold, whereas
+    uniform 512-d sphere data is pathological for any ANN index (rank-10 vs
+    rank-20 cosine scores near-tie, so exact recall@10 with ef_search=64 caps
+    around 0.8 regardless of index quality). This generator embeds an
+    isotropic latent sphere through an orthonormal basis into ``dim`` dims,
+    which keeps neighbor scores well separated like real embeddings do.
+    """
+    latent_dim = basis.shape[1]
+    latent = rng.standard_normal((n, latent_dim)).astype(np.float32)
+    latent /= np.linalg.norm(latent, axis=1, keepdims=True)
+    points = latent @ basis.T
+    return points / np.linalg.norm(points, axis=1, keepdims=True)
+
+
 # ---------------------------------------------------------------------------
 # (1) ANN recall vs exact oracle
 # ---------------------------------------------------------------------------
@@ -30,9 +52,11 @@ def test_hnsw_recall_vs_bruteforce_at_least_0_9():
     """FAISS HNSW (ef_search=64) must reach >= 0.9 mean recall vs brute force."""
     rng = np.random.default_rng(SEED)
     n, k, n_queries = 2000, 10, 50
-    vectors = _unit_vectors(rng, n)
+    basis, _ = np.linalg.qr(rng.standard_normal((EMBEDDING_DIM, 32)))
+    basis = basis.astype(np.float32)
+    vectors = _low_rank_unit_vectors(rng, basis, n)
     ids = np.arange(n, dtype=np.int64) + 500  # arbitrary non-contiguous offset
-    queries = _unit_vectors(rng, n_queries)
+    queries = _low_rank_unit_vectors(rng, basis, n_queries)
 
     hnsw = FaissHNSWIndex(
         dim=EMBEDDING_DIM, m=16, ef_construction=40, ef_search=64
@@ -157,7 +181,7 @@ def test_empty_search_returns_empty_list(index_cls):
 def test_sqlite_put_get_roundtrip_full_and_empty_context():
     store = SqliteMetadataStore()
     full = ContextMetadata(
-        timestamp=datetime(2024, 5, 1, 12, 30, 45, tzinfo=timezone.utc),
+        timestamp=datetime(2024, 5, 1, 12, 30, 45, tzinfo=UTC),
         geo_cluster="eu-west",
         source_platform="platform_a",
         text_entities=("alice", "berlin", "press-conference"),
@@ -198,7 +222,7 @@ def test_sqlite_get_many_roundtrip():
     store = SqliteMetadataStore()
     contexts = {
         10: ContextMetadata(
-            timestamp=datetime(2023, 1, 2, 3, 4, 5),
+            timestamp=datetime.fromisoformat("2023-01-02T03:04:05"),  # naive timestamp
             geo_cluster="us-east",
             source_platform="platform_b",
             text_entities=("bob",),

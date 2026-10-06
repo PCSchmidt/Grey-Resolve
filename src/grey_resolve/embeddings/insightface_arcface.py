@@ -63,7 +63,10 @@ class InsightFaceArcFaceExtractor:
         return self.extract_aligned(aligned)
 
     def extract(self, image: "np.ndarray", observation: FaceObservation) -> np.ndarray:
-        """Fallback path: bbox crop + resize to 112x112, then embed. Prefer landmarks."""
+        """Embed one face: landmark-aligned crop when landmarks are present (preferred),
+        otherwise the bbox-crop fallback (measurably worse)."""
+        if observation.landmarks is not None:
+            return self.extract_from_landmarks(image, observation.landmarks)
         import cv2
 
         x1, y1, x2, y2 = (int(round(v)) for v in observation.bbox)

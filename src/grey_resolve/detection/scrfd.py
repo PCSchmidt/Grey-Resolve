@@ -44,13 +44,14 @@ class ScrfdDetector:
         return self._model.detect(image_bgr, input_size=self._det_size, det_thresh=self._det_thresh)
 
     def detect(self, image: "np.ndarray") -> list[FaceObservation]:
-        det, _kpss = self.detect_raw(image)
+        det, kpss = self.detect_raw(image)
         observations = [
             FaceObservation(
                 bbox=(float(row[0]), float(row[1]), float(row[2]), float(row[3])),
                 detection_score=float(row[4]),
+                landmarks=None if kpss is None else np.asarray(kpss[i], dtype=np.float32),
             )
-            for row in det
+            for i, row in enumerate(det)
         ]
         observations.sort(key=lambda o: o.detection_score, reverse=True)
         return observations

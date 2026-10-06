@@ -186,9 +186,10 @@ def fmr_at_fnmr(
 ) -> float:
     """FMR at the best operating point whose FNMR is at most ``target_fnmr``.
 
-    Uses linear interpolation between adjacent ROC points where FNMR crosses
-    the target. ``target_fnmr`` must be in [0, 1]; 0.0 requests "FMR at
-    FNMR=0" (the strictest threshold that never rejects genuine pairs).
+    The operating threshold is the highest one whose FNMR is at most the
+    target (lowest FMR satisfying the FNMR constraint); when the target falls
+    strictly between two ROC points, FMR is linearly interpolated.
+    ``target_fnmr`` must be in [0, 1]; 0.0 requests "FMR at FNMR=0".
 
     Raises:
         ValueError: empty/mismatched scores, missing genuine/impostor pairs,
@@ -199,12 +200,14 @@ def fmr_at_fnmr(
     if not np.isfinite(target) or not 0.0 <= target <= 1.0:
         raise ValueError("target_fnmr must be a finite float in [0, 1]")
     fmr, fnmr, _ = roc_curve(s, g)
-    # fnmr is non-decreasing along ascending thresholds; find its crossing.
-    if target >= fnmr[-1]:
+    # fnmr is non-decreasing along ascending thresholds. The best (lowest-FMR)
+    # operating point with fnmr <= target is just before fnmr rises above it.
+    above = np.flatnonzero(fnmr > target)
+    if above.size == 0:  # target >= max FNMR: loosest threshold
         return float(fmr[-1])
-    i = int(np.argmax(fnmr >= target))  # first point at or above target
-    if fnmr[i] == target or i == 0:
-        return float(fmr[i])
+    i = int(above[0])  # first point with fnmr > target; fnmr[i-1] <= target
     j = i - 1
+    if fnmr[j] == target:
+        return float(fmr[j])
     w = (target - fnmr[j]) / (fnmr[i] - fnmr[j])
     return float(fmr[j] + w * (fmr[i] - fmr[j]))
