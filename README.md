@@ -50,7 +50,7 @@ for component and data-flow design. Supporting docs in [`docs/`](docs/):
 
 Setup instructions land with the Phase 1 code drop. The benchmark pipeline will run
 end-to-end from a single command on synthetic/public sample data. Datasets with
-non-commercial research terms (e.g. CASIA-WebFace) are **never** included in this
+non-commercial research terms (e.g. LFW, CASIA-WebFace, VGGFace2) are **never** included in this
 repository; loaders expect user-supplied local data.
 
 ## Ethics & limitations

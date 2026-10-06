@@ -3,8 +3,8 @@
 **Multimodal entity resolution for degraded, uncurated media.**
 Research prototype. Not for operational use.
 
-This plan converts the completed IronClad coursework (face retrieval over CASIA-WebFace
-gallery/probe splits) into a defense-framed portfolio project: resolve an identity across
+This plan converts the completed IronClad coursework (face retrieval over an LFW-derived
+gallery/probe split) into a defense-framed portfolio project: resolve an identity across
 low-quality, off-angle, uncurated media by fusing face-embedding similarity with
 contextual metadata.
 
@@ -76,7 +76,7 @@ Acceptance criteria:
 | Scope creep in multimodal features | Hard phase cuts above; gait/ReID dropped |
 | Public framing of a face-matching tool | Research-prototype banner, ethics section, synthetic/public data only, no watchlist language |
 | Backbone weight licensing | License review before any weights are referenced (`docs/BACKBONE_LICENSES.md`) |
-| Dataset redistribution (CASIA-WebFace is non-commercial) | Data never in git; loader expects user-supplied local data; benchmark CSVs checked for derived-data terms |
+| Dataset redistribution (course archive is LFW-derived, research-only) | Data never in git; loader expects user-supplied local data; benchmark CSVs checked for derived-data terms; fetch script + checksums only |
 
 ## Open decisions
 
