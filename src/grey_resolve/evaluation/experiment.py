@@ -58,8 +58,15 @@ CLEAN_SEVERITY = 0.0
 FNM_TARGET = 0.01
 FMR_AT_FNM_KEY = f"fmr_at_fnmr_{FNM_TARGET:g}"
 
-EmbedFn = Callable[[np.ndarray], np.ndarray]
-"""Maps one uint8 (H, W, 3) image to a 1-D embedding vector (any finite dtype)."""
+EmbedFn = Callable[[np.ndarray], "np.ndarray | None"]
+"""Maps one uint8 (H, W, 3) image to a 1-D embedding vector (any finite dtype).
+
+Returning ``None`` means "no embedding for this image" (e.g. face detection
+failed on a heavily degraded probe). Such images are excluded from scoring and
+counted per condition (``n_query_dropped`` / ``n_gallery_dropped``) instead of
+failing the run. Detection failure under degradation is a real outcome and must
+be reported, not hidden.
+"""
 
 QualityFn = Callable[[np.ndarray], float]
 """Maps one uint8 (H, W, 3) image to a finite quality score (higher = better)."""
@@ -119,6 +126,8 @@ class DegradedEmbeddings:
     query: np.ndarray
     gallery: np.ndarray
     labels: np.ndarray
+    n_dropped_query: int = 0
+    n_dropped_gallery: int = 0
 
     def pair_scores(self) -> tuple[np.ndarray, np.ndarray]:
         """Return (scores, is_genuine) for all probe-vs-gallery pairs."""
@@ -170,12 +179,24 @@ def _coerce_condition(condition: ConditionLike) -> DegradationCondition:
     raise TypeError("condition must be a DegradationCondition or a (name, severity) tuple")
 
 
-def _embed_all(embed_fn: EmbedFn, images: Sequence[np.ndarray], role: str) -> np.ndarray:
-    """Embed every image; return a float64 (N, dim) matrix."""
+def _embed_all(
+    embed_fn: EmbedFn, images: Sequence[np.ndarray], role: str, *, allow_empty: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
+    """Embed every image; return (float64 (K, dim) matrix, kept indices [K]).
+
+    Images for which ``embed_fn`` returns ``None`` are skipped and excluded from
+    the returned indices so callers can align rows across sides. Raises
+    ValueError when no embeddings at all are produced or any returned vector is
+    malformed.
+    """
     vectors: list[np.ndarray] = []
+    kept: list[int] = []
     dim: int | None = None
     for idx, img in enumerate(images):
-        vec = np.asarray(embed_fn(img), dtype=np.float64)
+        out = embed_fn(img)
+        if out is None:
+            continue
+        vec = np.asarray(out, dtype=np.float64)
         if vec.ndim != 1 or vec.size == 0:
             raise ValueError(f"embed_fn must return a non-empty 1-D vector ({role} image {idx})")
         if not np.all(np.isfinite(vec)):
@@ -190,7 +211,27 @@ def _embed_all(embed_fn: EmbedFn, images: Sequence[np.ndarray], role: str) -> np
                 f"{vec.size} != {dim})"
             )
         vectors.append(vec)
-    return np.stack(vectors)
+        kept.append(idx)
+    if not vectors:
+        if allow_empty:
+            return np.empty((0, 0), dtype=np.float64), np.empty(0, dtype=np.int64)
+        raise ValueError(f"no embeddings produced ({role}: embed_fn returned None for every image)")
+    return np.stack(vectors), np.asarray(kept, dtype=np.int64)
+
+
+def _aligned_rows(
+    gidx: np.ndarray, qidx: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Align gallery/query rows on shared original-image indices.
+
+    Returns ``(common_idx, gallery_rows, query_rows)`` such that
+    ``gallery[gallery_rows]`` and ``query[query_rows]`` describe the same source
+    images in ascending index order.
+    """
+    common = np.intersect1d(gidx, qidx, assume_unique=True)
+    grow = np.searchsorted(gidx, common)
+    qrow = np.searchsorted(qidx, common)
+    return common, grow, qrow
 
 
 def _degraded_images(images: Sequence[np.ndarray], condition: DegradationCondition) -> list[np.ndarray]:
@@ -243,18 +284,33 @@ def degrade_embeddings(
 
     Returns:
         DegradedEmbeddings with query (degraded probe), gallery (clean), labels.
+        Images without an embedding on either side (``embed_fn`` returned
+        ``None``) are excluded from all three arrays so rows stay aligned;
+        ``n_dropped_query`` / ``n_dropped_gallery`` report the exclusions.
 
     Raises:
-        ValueError / TypeError: bad images, labels, condition, or embed_fn output.
+        ValueError / TypeError: bad images, labels, condition, or embed_fn output;
+            fewer than 2 scoreable images or fewer than 2 distinct identities.
     """
     cond = _coerce_condition(condition)
     imgs, lab = _validated_inputs(images, labels)
-    gallery = _embed_all(embed_fn, imgs, "gallery")
+    gallery, gidx = _embed_all(embed_fn, imgs, "gallery")
     if cond.name == CLEAN_NAME:
-        query = gallery.copy()
+        query, qidx = gallery.copy(), gidx
     else:
-        query = _embed_all(embed_fn, _degraded_images(imgs, cond), "query")
-    return DegradedEmbeddings(query=query, gallery=gallery, labels=lab.copy())
+        query, qidx = _embed_all(embed_fn, _degraded_images(imgs, cond), "query")
+    common, grow, qrow = _aligned_rows(gidx, qidx)
+    if common.size < 2 or len(set(lab[common].tolist())) < 2:
+        raise ValueError(
+            "fewer than 2 scoreable images or 2 distinct identities after embedding drops"
+        )
+    return DegradedEmbeddings(
+        query=query[qrow],
+        gallery=gallery[grow],
+        labels=lab[common].copy(),
+        n_dropped_query=int(len(imgs) - common.size),
+        n_dropped_gallery=int(len(imgs) - gidx.size),
+    )
 
 
 def probe_gallery_scores(
@@ -329,6 +385,46 @@ def _condition_result(
     }
 
 
+def _safe_condition_result(
+    condition: DegradationCondition,
+    query: np.ndarray,
+    gallery: np.ndarray,
+    labels: np.ndarray,
+    *,
+    n_images: int,
+    n_gallery: int,
+    n_scored: int,
+) -> dict:
+    """Per-condition result with detection-failure counts and graceful degenerates.
+
+    Conditions where too few images produced embeddings (or only one identity
+    remains) report ``None`` metrics plus honest counts instead of raising:
+    detection failure under heavy degradation is a real, reportable outcome.
+    """
+    counts = {
+        "n_images": int(n_images),
+        "n_gallery": int(n_gallery),
+        "n_scored": int(n_scored),
+        "n_query_dropped": int(n_images - n_scored),
+        "n_gallery_dropped": int(n_images - n_gallery),
+    }
+    degenerate = n_scored < 2 or len(set(labels.tolist())) < 2
+    if degenerate:
+        return {
+            "condition": condition.name,
+            "severity": condition.severity,
+            "eer": None,
+            FMR_AT_FNM_KEY: None,
+            "roc_points": [],
+            "n_pairs": None,
+            "n_genuine": None,
+            "n_impostor": None,
+            **counts,
+        }
+    scores, is_genuine = probe_gallery_scores(query, gallery, labels)
+    return {**_condition_result(condition, scores, is_genuine), **counts}
+
+
 def _rate_metrics(scores: np.ndarray, is_genuine: np.ndarray, threshold: float) -> dict:
     """FMR/FNMR at a fixed threshold plus EER and FMR@FNMR target."""
     fmr, fnmr = fmr_fnmr_at_threshold(scores, is_genuine, threshold)
@@ -376,15 +472,31 @@ def run_condition_sweep(
     """
     imgs, lab = _validated_inputs(images, labels)
     planned = _plan_conditions(conditions, include_clean)
-    gallery = _embed_all(embed_fn, imgs, "gallery")
+    gallery, gidx = _embed_all(embed_fn, imgs, "gallery")
+    if gidx.size < 2 or len(set(lab[gidx].tolist())) < 2:
+        raise ValueError(
+            "gallery produced fewer than 2 scoreable images or 2 distinct identities"
+        )
     results: list[dict] = []
     for cond in planned:
         if cond.name == CLEAN_NAME:
-            query = gallery.copy()
+            query, qidx = gallery.copy(), gidx
         else:
-            query = _embed_all(embed_fn, _degraded_images(imgs, cond), "query")
-        scores, is_genuine = probe_gallery_scores(query, gallery, lab)
-        results.append(_condition_result(cond, scores, is_genuine))
+            query, qidx = _embed_all(
+                embed_fn, _degraded_images(imgs, cond), "query", allow_empty=True
+            )
+        common, grow, qrow = _aligned_rows(gidx, qidx)
+        results.append(
+            _safe_condition_result(
+                cond,
+                query[qrow],
+                gallery[grow],
+                lab[common],
+                n_images=len(imgs),
+                n_gallery=int(gidx.size),
+                n_scored=int(common.size),
+            )
+        )
     return results
 
 
@@ -422,9 +534,11 @@ def gated_vs_ungated(
     Returns:
         List of dicts, one per evaluated condition, each with keys
         ``"condition"``, ``"severity"``, ``"quality_threshold"``,
-        ``"operating_threshold"``, ``"full"`` and ``"gated"``. Both subsets carry
-        ``"n"``, ``"pass_rate"``, ``"fmr"``, ``"fnmr"``, ``"eer"`` and
-        ``"fmr_at_fnmr_0.01"``; the full set always has ``"pass_rate"`` 1.0.
+        ``"operating_threshold"``, ``"n_dropped"``, ``"full"`` and ``"gated"``.
+        Both subsets carry ``"n"``, ``"pass_rate"``, ``"fmr"``, ``"fnmr"``,
+        ``"eer"`` and ``"fmr_at_fnmr_0.01"``; the full set always has
+        ``"pass_rate"`` 1.0. ``pass_rate`` is over *scoreable* probes (images
+        without embeddings are excluded and counted in ``n_dropped``).
     """
     imgs, lab = _validated_inputs(images, labels)
     if not callable(quality_fn):
@@ -436,47 +550,63 @@ def gated_vs_ungated(
     if not np.isfinite(op_thr):
         raise ValueError("threshold must be finite")
     planned = _plan_conditions(conditions, include_clean)
-    gallery = _embed_all(embed_fn, imgs, "gallery")
+    gallery, gidx = _embed_all(embed_fn, imgs, "gallery")
+    if gidx.size < 2 or len(set(lab[gidx].tolist())) < 2:
+        raise ValueError(
+            "gallery produced fewer than 2 scoreable images or 2 distinct identities"
+        )
 
+    null_metrics = {
+        "n_pairs": None,
+        "n_genuine": None,
+        "n_impostor": None,
+        "fmr": None,
+        "fnmr": None,
+        "eer": None,
+        FMR_AT_FNM_KEY: None,
+    }
     results: list[dict] = []
     for cond in planned:
         deg = _degraded_images(imgs, cond)
         if cond.name == CLEAN_NAME:
-            query = gallery.copy()
+            query, qidx = gallery.copy(), gidx
         else:
-            query = _embed_all(embed_fn, deg, "query")
+            query, qidx = _embed_all(embed_fn, deg, "query", allow_empty=True)
+        common, grow, qrow = _aligned_rows(gidx, qidx)
         quality = np.array([_quality_value(quality_fn, im, i) for i, im in enumerate(deg)])
-        mask = quality >= qt
 
-        scores, is_genuine = probe_gallery_scores(query, gallery, lab)
-        full = {"n": int(mask.size), "pass_rate": 1.0, **_rate_metrics(scores, is_genuine, op_thr)}
-
-        n_pass = int(mask.sum())
-        if n_pass >= 2 and len(set(lab[mask].tolist())) >= 2:
-            sub_scores, sub_genuine = probe_gallery_scores(query[mask], gallery[mask], lab[mask])
-            gated = {
-                "n": n_pass,
-                "pass_rate": float(n_pass / mask.size),
-                **_rate_metrics(sub_scores, sub_genuine, op_thr),
-            }
+        n_scored = int(common.size)
+        degenerate = n_scored < 2 or len(set(lab[common].tolist())) < 2
+        if degenerate:
+            full = {"n": n_scored, "pass_rate": 1.0, **null_metrics}
+            gated = {"n": 0, "pass_rate": 0.0, **null_metrics}
         else:
-            gated = {
-                "n": n_pass,
-                "pass_rate": float(n_pass / mask.size),
-                "n_pairs": None,
-                "n_genuine": None,
-                "n_impostor": None,
-                "fmr": None,
-                "fnmr": None,
-                "eer": None,
-                FMR_AT_FNM_KEY: None,
-            }
+            scores, is_genuine = probe_gallery_scores(query[qrow], gallery[grow], lab[common])
+            full = {"n": n_scored, "pass_rate": 1.0, **_rate_metrics(scores, is_genuine, op_thr)}
+            gate_mask = quality[common] >= qt
+            n_pass = int(gate_mask.sum())
+            if n_pass >= 2 and len(set(lab[common][gate_mask].tolist())) >= 2:
+                sub_scores, sub_genuine = probe_gallery_scores(
+                    query[qrow][gate_mask], gallery[grow][gate_mask], lab[common][gate_mask]
+                )
+                gated = {
+                    "n": n_pass,
+                    "pass_rate": float(n_pass / n_scored),
+                    **_rate_metrics(sub_scores, sub_genuine, op_thr),
+                }
+            else:
+                gated = {
+                    "n": n_pass,
+                    "pass_rate": float(n_pass / n_scored),
+                    **null_metrics,
+                }
         results.append(
             {
                 "condition": cond.name,
                 "severity": cond.severity,
                 "quality_threshold": qt,
                 "operating_threshold": op_thr,
+                "n_dropped": int(len(imgs) - n_scored),
                 "full": full,
                 "gated": gated,
             }

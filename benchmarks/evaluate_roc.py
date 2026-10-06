@@ -40,7 +40,16 @@ from grey_resolve.evaluation.experiment import (
 )
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg"}
-DEFAULT_SEVERITIES = (0.25, 0.5, 0.75)
+# Severity is each operator's own strength parameter (sigma / delta / scale /
+# angle_deg) -- there is no shared normalized scale, so the default grid is
+# per-operator. Values chosen to span "mild" to "severe" for each.
+DEFAULT_SEVERITY_GRID = {
+    "gaussian_blur": (1.0, 3.0, 8.0),    # sigma in px
+    "brightness": (0.25, 0.5, 0.75),     # delta as fraction of range
+    "downsample": (0.5, 0.25, 0.1),      # retained scale (smaller = harsher)
+    "off_angle": (15.0, 30.0, 45.0),     # rotation in degrees
+}
+DEFAULT_SEVERITIES = (0.25, 0.5, 0.75)   # fallback when --severities is given for all ops
 MODEL_FILES = ("det_10g.onnx", "w600k_r50.onnx")
 FETCH_HINT = "fetch the backbone first: python scripts/fetch_backbone.py"
 
@@ -100,21 +109,50 @@ def load_dataset(
     return images, labels
 
 
+class _DetectionCache:
+    """Memoized face detection shared by the embed and quality adapters.
+
+    Degradation produces fresh arrays per condition, so the key is a content
+    hash; detection runs once per unique image instead of twice.
+    """
+
+    def __init__(self, detector, max_entries: int = 512):
+        import collections
+
+        self._detector = detector
+        self._cache: "collections.OrderedDict" = collections.OrderedDict()
+        self._max = max_entries
+
+    def detect(self, image: np.ndarray):
+        import hashlib
+
+        key = hashlib.sha1(image.tobytes()).digest()
+        if key in self._cache:
+            self._cache.move_to_end(key)
+            return self._cache[key]
+        observations = self._detector.detect(image)
+        self._cache[key] = observations
+        if len(self._cache) > self._max:
+            self._cache.popitem(last=False)
+        return observations
+
+
 class _FaceEmbedder:
     """embed_fn adapter: detect the most confident face, then embed it.
 
-    Raises RuntimeError when no face is found -- a benchmark image must contain
-    one detectable face.
+    Returns ``None`` when no face is detected -- heavy degradation causes real
+    detection failures, and the experiment core excludes and counts those
+    probes per condition instead of aborting the run.
     """
 
     def __init__(self, detector, extractor):
         self._detector = detector
         self._extractor = extractor
 
-    def __call__(self, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> "np.ndarray | None":
         observations = self._detector.detect(image)
         if not observations:
-            raise RuntimeError("no face detected in benchmark image (expected one face per image)")
+            return None
         return self._extractor.extract(image, observations[0])
 
 
@@ -141,7 +179,7 @@ def _build_adapters(det_model: Path, rec_model: Path):
     missing = [str(p) for p in (det_model, rec_model) if not p.exists()]
     if missing:
         raise FileNotFoundError(f"backbone weights not found: {', '.join(missing)}; {FETCH_HINT}")
-    detector = ScrfdDetector(model_file=det_model)
+    detector = _DetectionCache(ScrfdDetector(model_file=det_model))
     extractor = InsightFaceArcFaceExtractor(model_file=rec_model)
     return detector, extractor, HeuristicQualityAssessor()
 
@@ -156,8 +194,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--severities",
         type=float,
         nargs="+",
-        default=list(DEFAULT_SEVERITIES),
-        help="severity per degradation (the operator's own strength parameter)",
+        default=None,
+        help="override: apply these severities to every operator "
+        "(default: per-operator grid, see DEFAULT_SEVERITY_GRID)",
     )
     parser.add_argument("--out-dir", default="benchmarks/out", help="output root for run directories")
     parser.add_argument("--det-model", default=None, help=f"SCRFD weights (default: {_model_dir() / MODEL_FILES[0]})")
@@ -181,13 +220,22 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     embed_fn = _FaceEmbedder(detector, extractor)
     quality_fn = _FaceQuality(detector, assessor)
+    if args.severities:
+        grid = {name: tuple(args.severities) for name in sorted(DEGRADATIONS)}
+    else:
+        grid = {
+            name: DEFAULT_SEVERITY_GRID.get(name, DEFAULT_SEVERITIES)
+            for name in sorted(DEGRADATIONS)
+        }
     conditions = [
         DegradationCondition(name, severity)
         for name in sorted(DEGRADATIONS)
-        for severity in args.severities
+        for severity in grid[name]
     ]
 
     print(f"loaded {len(images)} images / {len(set(labels))} identities from {args.data_root}")
+    for name, sevs in grid.items():
+        print(f"  grid {name}: {list(sevs)}")
     print(f"running {len(conditions)} conditions + clean baseline ...")
     sweep = run_condition_sweep(images, labels, conditions, embed_fn)
     gated = gated_vs_ungated(
@@ -207,7 +255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = {
         "data_root": str(Path(args.data_root).resolve()),
         "limit": args.limit,
-        "severities": [float(s) for s in args.severities],
+        "severity_grid": {name: [float(s) for s in sevs] for name, sevs in grid.items()},
         "degradations": sorted(DEGRADATIONS),
         "quality_threshold": float(args.quality_threshold),
         "operating_threshold": float(args.operating_threshold),

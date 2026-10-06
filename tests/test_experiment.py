@@ -358,3 +358,96 @@ def test_gated_bad_quality_values_raise():
         gated_vs_ungated(images, labels, [], _color_embed, lambda im: float("nan"), 0.5)
     with pytest.raises(ValueError):
         gated_vs_ungated(images, labels, [], _color_embed, lambda im: 1.0, float("inf"))
+
+
+# ------------------------------------------------------- embed_fn None (detection failure)
+
+
+def test_run_condition_sweep_counts_dropped_probes():
+    images, labels = _identity_dataset(n_idents=3, n_variants=2)
+
+    def flaky_embed(img):
+        # drops the first image outright (simulates persistent detection failure)
+        if img is images[0]:
+            return None
+        return _color_embed(img)
+
+    results = run_condition_sweep(images, labels, [("gaussian_blur", 1.0)], flaky_embed)
+    for r in results:
+        assert r["n_images"] == 6
+        assert r["n_gallery"] == 5
+        assert r["n_gallery_dropped"] == 1
+        assert r["n_scored"] + r["n_query_dropped"] == 6
+    clean = results[0]
+    assert clean["condition"] == "clean"
+    assert clean["n_query_dropped"] == 1
+    assert clean["eer"] is not None
+
+
+def test_run_condition_sweep_all_queries_dropped_reports_none_metrics():
+    images, labels = _identity_dataset(n_idents=3, n_variants=2)
+
+    def drop_degraded(img):
+        # blur changes the image; drop those probes by comparing to originals
+        for orig in images:
+            if img is orig:
+                return _color_embed(img)
+        return None
+
+    results = run_condition_sweep(images, labels, [("gaussian_blur", 1.5)], drop_degraded)
+    by_name = {r["condition"]: r for r in results}
+    assert by_name["clean"]["eer"] is not None
+    degraded = by_name["gaussian_blur"]
+    assert degraded["n_query_dropped"] == 6
+    assert degraded["eer"] is None
+    assert degraded["fmr_at_fnmr_0.01"] is None
+    assert degraded["roc_points"] == []
+    assert degraded["n_pairs"] is None
+
+
+def test_run_condition_sweep_gallery_all_none_raises():
+    images, labels = _identity_dataset()
+    with pytest.raises(ValueError, match="no embeddings produced"):
+        run_condition_sweep(images, labels, [("gaussian_blur", 1.0)], lambda im: None)
+
+
+def test_degrade_embeddings_excludes_dropped_rows():
+    images, labels = _identity_dataset(n_idents=3, n_variants=2)
+
+    def drop_first(img):
+        if img is images[0]:
+            return None
+        return _color_embed(img)
+
+    emb = degrade_embeddings(images, labels, drop_first, ("gaussian_blur", 1.0))
+    assert emb.query.shape[0] == emb.gallery.shape[0] == emb.labels.shape[0] == 5
+    assert emb.n_dropped_gallery == 1
+    assert emb.n_dropped_query >= 1
+    scores, is_genuine = emb.pair_scores()
+    assert scores.size == 25
+
+
+def test_degrade_embeddings_raises_when_too_few_scoreable():
+    images, labels = _identity_dataset(n_idents=3, n_variants=2)
+
+    def only_first(img):
+        return _color_embed(img) if img is images[0] else None
+
+    with pytest.raises(ValueError, match="scoreable"):
+        degrade_embeddings(images, labels, only_first, CLEAN_CONDITION)
+
+
+def test_gated_vs_ungated_reports_n_dropped():
+    images, labels = _identity_dataset(n_idents=3, n_variants=2)
+
+    def drop_first(img):
+        if img is images[0]:
+            return None
+        return _color_embed(img)
+
+    results = gated_vs_ungated(
+        images, labels, [("gaussian_blur", 1.0)], drop_first, lambda im: 1.0, 0.5
+    )
+    for r in results:
+        assert r["n_dropped"] == 1
+        assert r["full"]["n"] == 5

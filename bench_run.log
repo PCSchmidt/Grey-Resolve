@@ -1,0 +1,19 @@
+C:\Dev\AIEngineeringProjects\Grey-Resolve\.venv\Lib\site-packages\insightface\utils\face_align.py:23: FutureWarning: `estimate` is deprecated since version 0.26 and will be removed in version 2.2. Please use `SimilarityTransform.from_estimate` class constructor instead.
+  tform.estimate(lmk, dst)
+loaded 50 images / 10 identities from C:\Users\pchri\AppData\Local\Temp\gr_bench_data
+running 12 conditions + clean baseline ...
+wrote benchmarks\out\20261006T173025Z\results.json
+wrote benchmarks\out\20261006T173025Z\summary.csv
+  clean          sev=0.0   eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  brightness     sev=0.25  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  brightness     sev=0.5   eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  brightness     sev=0.75  eer=0.0280 fmr_at_fnmr_0.01=0.0394
+  downsample     sev=0.25  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  downsample     sev=0.5   eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  downsample     sev=0.75  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  gaussian_blur  sev=0.25  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  gaussian_blur  sev=0.5   eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  gaussian_blur  sev=0.75  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  off_angle      sev=0.25  eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  off_angle      sev=0.5   eer=0.0000 fmr_at_fnmr_0.01=0.0000
+  off_angle      sev=0.75  eer=0.0000 fmr_at_fnmr_0.01=0.0000
