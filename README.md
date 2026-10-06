@@ -48,8 +48,16 @@ for component and data-flow design. Supporting docs in [`docs/`](docs/):
 
 ## Getting started
 
-Setup instructions land with the Phase 1 code drop. The benchmark pipeline will run
-end-to-end from a single command on synthetic/public sample data. Datasets with
+```bash
+uv venv .venv                             # Python 3.12
+uv pip install -e ".[dev]"                # core deps + pytest/ruff
+uv pip install -e ".[index,backbone,api]" # faiss, insightface/onnxruntime, fastapi
+python scripts/fetch_backbone.py          # downloads non-commercial weights at runtime
+.venv/Scripts/python -m pytest -q         # run the test suite
+```
+
+Weights are downloaded at runtime and never committed (see
+`THIRD_PARTY_NOTICES.md`). Datasets with
 non-commercial research terms (e.g. LFW, CASIA-WebFace, VGGFace2) are **never** included in this
 repository; loaders expect user-supplied local data.
 
