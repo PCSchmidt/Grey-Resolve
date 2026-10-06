@@ -103,13 +103,29 @@ The manifest config hash is embedded in every benchmark result for traceability.
 - **What this cannot show**: any real-world accuracy. Results are properties of a
   generator we control. The report and README must state this wherever numbers appear.
 
-## Open questions
+## Open questions (resolved)
 
-1. Synthetic face imagery source and its license (must allow redistribution of generated
-   images, or generate at build time and ship only seeds/parameters).
-2. Whether text entities are template-generated strings or small generated snippets.
-3. Size targets for the final committed scenario set (likely: parameters + seeds only;
-   images generated locally, since the repo must stay lightweight and license-clean).
+All three open questions are resolved by design decision (Phase 2 implementation):
+
+1. **The repo ships NO face imagery -- not even synthetic/GAN faces.** Synthetic
+   face images (StyleGAN / generated.photos-style) carry murky licenses. Instead the
+   generator fabricates ALL personas and context metadata on top of **user-supplied
+   local face images**: paths referenced in place, or copied by the user into
+   `data/scenarios/` (gitignored). The generator never writes, copies, or
+   redistributes pixels; caller-held numpy arrays are referenced as `inline/NNNNNN`.
+2. **Near-tie ambiguity sets are SELECTED, not faked.** `select_near_ties` measures
+   embedding cosine between the user-supplied images and keeps cross-persona pairs
+   whose cosine lands in the measured 0.65-0.75 band from
+   `configs/threshold_profiles.yaml` (grouped into 2-3-persona ambiguity sets). This
+   is more realistic than generated look-alike faces and stays license-clean.
+3. **Text entities are template-generated strings** from the fictional template
+   vocabulary in `configs/scenario_v0.yaml`; the committed scenario content is
+   **parameters + seeds only** (the config file). Generated outputs
+   (`identities.json`, `media.jsonl`, `manifest.json`) live under `data/scenarios/`
+   (gitignored) and are reproducible from the config seed.
+
+Everything generated is marked `synthetic: true` and stamped with the generator
+version, seed, and config hash (see `src/grey_resolve/scenario/generator.py`).
 
 ## Provenance
 

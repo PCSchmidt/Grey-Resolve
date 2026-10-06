@@ -1,0 +1,65 @@
+# Synthetic scenario parameters (Phase 2) -- see docs/SYNTHETIC_SCENARIO_SPEC.md.
+#
+# The repo ships NO face imagery (not even synthetic/GAN faces): the generator
+# fabricates personas and context metadata on top of USER-SUPPLIED local face
+# images (paths referenced, or copied into data/scenarios/ which is gitignored).
+# Near-tie ambiguity sets are SELECTED by measured embedding cosine in
+# near_tie_band, never faked. Everything generated is marked synthetic=true.
+scenario:
+  n_identities: 30
+  n_geo_clusters: 5
+  n_periods: 4
+  media_per_identity: 20
+  context_noise_rate: 0.15
+  context_absent_rate: 0.20
+  # Extra tunables (documented in src/grey_resolve/scenario/generator.py):
+  geo_drift_rate: 0.20        # share of non-absent items recorded outside the home geo cluster
+  clean_media_rate: 0.15      # share of items with degradation {type: none, severity: 0.0}
+  timestamp_jitter_days: 3.0  # gaussian jitter on sampled timestamps (clipped to active period)
+  near_tie_band: [0.65, 0.75] # cross-persona cosine band for near-tie ambiguity sets
+  max_near_tie_sets: 10
+  seed: 42
+
+# Template vocabulary: clearly fictional strings only. Used to fabricate
+# display names, geo clusters, platforms, archetypes, text aliases, and
+# misleading (noise) text entities. degradation_types keys match
+# grey_resolve.degradation.operators.DEGRADATIONS.
+templates:
+  geo_clusters:
+    - geo-alpha
+    - geo-beta
+    - geo-gamma
+    - geo-delta
+    - geo-epsilon
+  platforms:
+    - platform-a
+    - platform-b
+    - platform-c
+    - platform-d
+    - platform-e
+  archetypes:
+    - maritime-logistics-figure
+    - orbital-freight-broker
+    - glacier-research-liaison
+    - desert-solar-auditor
+    - island-telecom-archivist
+    - river-barge-coordinator
+    - tundra-mapping-enthusiast
+    - fictional-conference-circuit-speaker
+  alias_templates:
+    - alias-one
+    - alias-two
+    - alias-three
+    - alias-four
+    - alias-five
+  entity_templates:
+    - entity-ember
+    - entity-harbor
+    - entity-quartz
+    - entity-lantern
+    - entity-cascade
+  degradation_types:
+    - gaussian_blur
+    - brightness
+    - downsample
+    - off_angle
