@@ -76,9 +76,10 @@ repository; loaders expect user-supplied local data.
 
 ## License
 
-Code license to be confirmed before the first public release (see
-`docs/BACKBONE_LICENSES.md` for the dependency-license review). Pretrained model weights
-referenced by this project have their own terms and are not redistributed here.
+Code: [MIT](LICENSE). Pretrained model weights referenced by this project (InsightFace
+buffalo_l) have their own **non-commercial** terms and are not redistributed here — see
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
+[`docs/BACKBONE_LICENSES.md`](docs/BACKBONE_LICENSES.md).
 
 ## Acknowledgment
 

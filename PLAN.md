@@ -100,8 +100,9 @@ Acceptance criteria:
    seam now, so the pipeline runs end-to-end without extra weights; add the MagFace
    feature-magnitude assessor when its weights are fetched, and measure its extra
    forward-pass cost then. AdaFace feature-norm stays the zero-cost fallback.
-2. Code license for Grey-Resolve itself (MIT vs Apache-2.0) — decide before first public
-   push; `THIRD_PARTY_NOTICES.md` required either way.
+2. ~~Code license~~ — **decided (2026-10-06): MIT.** Standard for portfolio repos,
+   compatible with every dependency. Model-weight terms are unaffected (non-commercial
+   grants travel with the weights, not with this code).
 
 ## Repo layout (target)
 

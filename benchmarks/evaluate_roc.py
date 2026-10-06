@@ -60,13 +60,14 @@ def _model_dir() -> Path:
 
 
 def load_dataset(
-    root: str | Path, limit: int | None = None
+    root: str | Path, limit: int | None = None, max_identities: int | None = None
 ) -> tuple[list[np.ndarray], list[str]]:
     """Load ``<root>/<identity>/*.{png,jpg,jpeg}`` as BGR uint8 images + identity labels.
 
     Args:
         root: dataset directory containing one sub-directory per identity.
         limit: optional cap on images per identity (files in sorted order).
+        max_identities: optional cap on identity dirs (sorted order).
 
     Returns:
         ``(images, labels)`` with one uint8 (H, W, 3) BGR image and one identity
@@ -89,9 +90,15 @@ def load_dataset(
     if limit is not None and limit < 1:
         raise ValueError("limit must be >= 1")
 
+    ident_dirs = sorted(p for p in root.iterdir() if p.is_dir())
+    if max_identities is not None:
+        if max_identities < 2:
+            raise ValueError("max_identities must be >= 2")
+        ident_dirs = ident_dirs[:max_identities]
+
     images: list[np.ndarray] = []
     labels: list[str] = []
-    for ident_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+    for ident_dir in ident_dirs:
         files = sorted(f for f in ident_dir.iterdir() if f.suffix.lower() in IMAGE_SUFFIXES)
         if limit is not None:
             files = files[:limit]
@@ -143,17 +150,32 @@ class _FaceEmbedder:
     Returns ``None`` when no face is detected -- heavy degradation causes real
     detection failures, and the experiment core excludes and counts those
     probes per condition instead of aborting the run.
+
+    Results are memoized by content hash: the sweep and the gating ablation
+    score the same images, so ArcFace runs once per unique image.
     """
 
-    def __init__(self, detector, extractor):
+    def __init__(self, detector, extractor, max_entries: int = 20000):
+        import collections
+
         self._detector = detector
         self._extractor = extractor
+        self._cache: "collections.OrderedDict" = collections.OrderedDict()
+        self._max = max_entries
 
     def __call__(self, image: np.ndarray) -> "np.ndarray | None":
+        import hashlib
+
+        key = hashlib.sha1(image.tobytes()).digest()
+        if key in self._cache:
+            self._cache.move_to_end(key)
+            return self._cache[key]
         observations = self._detector.detect(image)
-        if not observations:
-            return None
-        return self._extractor.extract(image, observations[0])
+        vec = None if not observations else self._extractor.extract(image, observations[0])
+        self._cache[key] = vec
+        if len(self._cache) > self._max:
+            self._cache.popitem(last=False)
+        return vec
 
 
 class _FaceQuality:
@@ -191,6 +213,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--data-root", required=True, help="dataset dir: <root>/<identity>/*.png|jpg")
     parser.add_argument("--limit", type=int, default=None, help="cap images per identity (quick runs)")
     parser.add_argument(
+        "--max-identities",
+        type=int,
+        default=None,
+        help="cap the number of identity dirs, in sorted order (quick runs)",
+    )
+    parser.add_argument(
         "--severities",
         type=float,
         nargs="+",
@@ -213,7 +241,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     rec_model = Path(args.rec_model) if args.rec_model else model_dir / MODEL_FILES[1]
 
     try:
-        images, labels = load_dataset(args.data_root, args.limit)
+        images, labels = load_dataset(
+            args.data_root, args.limit, max_identities=args.max_identities
+        )
         detector, extractor, assessor = _build_adapters(det_model, rec_model)
     except (FileNotFoundError, ValueError) as exc:
         raise SystemExit(f"error: {exc}") from exc
@@ -255,6 +285,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = {
         "data_root": str(Path(args.data_root).resolve()),
         "limit": args.limit,
+        "max_identities": args.max_identities,
         "severity_grid": {name: [float(s) for s in sevs] for name, sevs in grid.items()},
         "degradations": sorted(DEGRADATIONS),
         "quality_threshold": float(args.quality_threshold),
