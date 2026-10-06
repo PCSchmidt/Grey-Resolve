@@ -99,6 +99,28 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--k", type=int, default=DEFAULT_K, help="hit@k cutoff for the ranking metrics")
     parser.add_argument("--profile", default="strict_surveillance", help="threshold profile name")
     parser.add_argument(
+        "--near-tie-quantile",
+        type=float,
+        default=0.98,
+        help="adaptive near-tie band: lower edge at this quantile of measured "
+        "cross-persona cosines (0 disables; the config band is then used)",
+    )
+    parser.add_argument("--n-identities", type=int, default=None, help="override scenario persona count")
+    parser.add_argument(
+        "--media-per-identity",
+        type=int,
+        default=None,
+        help="override scenario media count per persona (keep <= images per persona source pool)",
+    )
+    parser.add_argument(
+        "--near-tie-band",
+        type=float,
+        nargs=2,
+        default=None,
+        metavar=("LOW", "HIGH"),
+        help="explicit near-tie band (overrides --near-tie-quantile and the config band)",
+    )
+    parser.add_argument(
         "--scenario-config",
         default="configs/scenario_v0.yaml",
         help="synthetic scenario config YAML (seed is overridden by --seed)",
@@ -166,6 +188,69 @@ def _fmt(value: object) -> str:
     return "" if value is None else str(value)
 
 
+def _warn_on_shared_assets(media, n_labels: "int | None") -> None:
+    """Warn when distinct personas reference the same source images.
+
+    Shared assets create duplicate persona evidence (cosine exactly 1.0), which
+    makes near-tie results degenerate: "ties" between personas are then
+    identical-photo artifacts, not look-alike ambiguity. Avoid by keeping
+    n_identities <= number of real label groups and media_per_identity <= the
+    smallest group size.
+    """
+    refs_by_persona: dict[str, set] = {}
+    for m in media:
+        refs_by_persona.setdefault(m.identity_id, set()).add(m.image_ref)
+    owners: dict = {}
+    for pid, refs in refs_by_persona.items():
+        for ref in refs:
+            owners.setdefault(ref, set()).add(pid)
+    shared = {ref: pids for ref, pids in owners.items() if len(pids) > 1}
+    if shared:
+        n_personas = len(refs_by_persona)
+        print(
+            f"warning: {len(shared)} source images are shared across personas "
+            f"({n_personas} personas from"
+            + (f" {n_labels} label groups" if n_labels is not None else " an unlabeled pool")
+            + ") -- near-tie results may be degenerate duplicate-photo artifacts; "
+            "reduce --n-identities or --media-per-identity"
+        )
+
+
+def _resolve_near_tie_band(vectors, persona_ids, args, fallback_band) -> tuple[float, float]:
+    """Pick the near-tie band: explicit flag > adaptive quantile > config band.
+
+    The adaptive default exists because ArcFace cross-persona cosines on
+    LFW-derived data are far lower than legacy facenet scales (observed 99th
+    percentile ~0.16): a fixed 0.65-0.75 band selects nothing. "Near-tie" is
+    therefore defined relative to the measured distribution -- the hardest
+    cross-persona comparisons in the set.
+    """
+    if args.near_tie_band is not None:
+        low, high = float(args.near_tie_band[0]), float(args.near_tie_band[1])
+        if not (low < high):
+            raise SystemExit("error: --near-tie-band must satisfy LOW < HIGH")
+        return (low, high)
+    q = float(args.near_tie_quantile)
+    if q > 0:
+        if q >= 1.0:
+            raise SystemExit("error: --near-tie-quantile must be in [0, 1)")
+        import numpy as np
+
+        from grey_resolve.evaluation.metrics import build_pairs
+
+        try:
+            scores, is_genuine = build_pairs(vectors, persona_ids)
+        except ValueError:
+            return tuple(float(v) for v in fallback_band)
+        cross = scores[~is_genuine]
+        if cross.size:
+            # clamp below 1.0 so the band is always valid even when the
+            # hardest cross-persona pairs are near-duplicates (cosine = 1.0)
+            low = min(float(np.quantile(cross, q)), 1.0 - 1e-9)
+            return (low, 1.0)
+    return tuple(float(v) for v in fallback_band)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     model_dir = _model_dir()
@@ -190,16 +275,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         scenario_config = load_scenario_config(args.scenario_config)
     except (OSError, ValueError) as exc:
         raise SystemExit(f"error: {exc}") from exc
-    scenario_config = replace(scenario_config, seed=int(args.seed))
+    overrides = {"seed": int(args.seed)}
+    if args.n_identities is not None:
+        overrides["n_identities"] = int(args.n_identities)
+    if args.media_per_identity is not None:
+        overrides["media_per_identity"] = int(args.media_per_identity)
+    scenario_config = replace(scenario_config, **overrides)
 
     identities = generate_identities(scenario_config)
     media = fabricate_media(images, identities, scenario_config, labels=labels)
+    _warn_on_shared_assets(media, len(labels) if labels is not None else None)
     means, persona_ids = _persona_embeddings(media, emb_by_index)
+    resolved_band = _resolve_near_tie_band(
+        means, persona_ids, args, scenario_config.near_tie_band
+    )
     try:
         near_tie_sets = select_near_ties(
             means,
             persona_ids,
-            band=scenario_config.near_tie_band,
+            band=resolved_band,
             max_sets=scenario_config.max_near_tie_sets,
         )
     except ValueError as exc:
@@ -207,10 +301,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         near_tie_sets = []
     print(
         f"scenario: {len(identities)} personas / {len(media)} media items / "
-        f"{len(near_tie_sets)} near-tie sets (band {list(scenario_config.near_tie_band)})"
+        f"{len(near_tie_sets)} near-tie sets (resolved band "
+        f"{[round(v, 4) for v in resolved_band]}, quantile {args.near_tie_quantile})"
     )
     if not near_tie_sets:
-        print("note: no near-tie sets in band -- near-tie metrics will be empty; consider a wider band")
+        print(
+            "note: no near-tie sets in band -- near-tie metrics will be empty; "
+            "raise --near-tie-quantile (e.g. 0.95) or widen --near-tie-band"
+        )
 
     run_stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     out_dir = Path(args.out_dir) / run_stamp
@@ -295,6 +393,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "n_items": len(items),
         "n_items_dropped": n_items_dropped,
         "n_embed_dropped": n_embed_dropped,
+        "near_tie_band": [float(v) for v in resolved_band],
+        "near_tie_quantile": float(args.near_tie_quantile),
         "near_tie_sets": [s.to_dict() for s in near_tie_sets],
         "run_stamp": run_stamp,
         "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
