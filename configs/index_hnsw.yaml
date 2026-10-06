@@ -1,0 +1,6 @@
+# FAISS HNSW index hyperparameters (cosine metric on unit-norm embeddings).
+# Baseline values carried over from IronClad tuning (M=16, efConstruction=40).
+hnsw:
+  m: 16
+  ef_construction: 40
+  ef_search: 64

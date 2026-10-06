@@ -1,0 +1,16 @@
+# Operating profiles: FIQA gate threshold + fusion weights.
+# "strict_surveillance" raises the quality bar; "broad_lead" casts a wider net.
+# alpha/beta are the Phase 2 fusion weights P = alpha*S_face + beta*S_context.
+profiles:
+  strict_surveillance:
+    quality_min: 0.60
+    ambiguous_low: 0.65
+    ambiguous_high: 0.75
+    alpha: 0.7
+    beta: 0.3
+  broad_lead:
+    quality_min: 0.35
+    ambiguous_low: 0.60
+    ambiguous_high: 0.80
+    alpha: 0.5
+    beta: 0.5

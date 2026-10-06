@@ -78,12 +78,27 @@ Acceptance criteria:
 | Backbone weight licensing | License review before any weights are referenced (`docs/BACKBONE_LICENSES.md`) |
 | Dataset redistribution (course archive is LFW-derived, research-only) | Data never in git; loader expects user-supplied local data; benchmark CSVs checked for derived-data terms; fetch script + checksums only |
 
+## Decisions (recorded 2026-10-06)
+
+1. **Embedding backbone — InsightFace `buffalo_l` (w600k_r50 ArcFace, 512-d).** Chosen on
+   weights-license clarity: the only candidate with an explicit signed non-commercial grant
+   (`MODEL.LICENSE`). Runtime-downloaded weights; never committed. Fallback: AdaFace
+   IR-50 WebFace4M (MIT code, best on low-quality benchmarks like IJB-S/TinyFace; note BGR
+   input convention and unresolved weight terms). Full analysis: `docs/BACKBONE_LICENSES.md`.
+2. **FIQA — MagFace feature magnitude (Apache-2.0 code) as primary**; AdaFace feature norm
+   as zero-cost fallback if the backbone swap makes it free. CR-FIQA only as a cited
+   benchmark baseline (no license on its code/weights — do not vendor).
+3. **API framework: FastAPI** (typed request/response models, testable, auto OpenAPI docs).
+   The IronClad Flask diff is acceptable because `app.py` is thin anyway per
+   `docs/PORT_INVENTORY.md`.
+4. **Metadata store: SQLite (Phase 1)**; revisit with Qdrant payloads in Phase 3.
+
 ## Open decisions
 
-1. Embedding backbone (license review outcome) — gates Phase 1 start.
-2. FIQA method: CR-FIQA vs MagFace quality score vs detector-confidence heuristic.
-3. API framework: FastAPI (typed, testable) vs staying with Flask to minimize port diff.
-4. Metadata store: SQLite (Phase 1) is the default; revisit with Qdrant payloads in Phase 3.
+1. Whether the Phase 1 quality gate runs MagFace alongside SCRFD, or piggybacks on the
+   AdaFace/Ir-50 fallback path first (measure cost of the extra forward pass).
+2. Code license for Grey-Resolve itself (MIT vs Apache-2.0) — decide before first public
+   push; `THIRD_PARTY_NOTICES.md` required either way.
 
 ## Repo layout (target)
 
