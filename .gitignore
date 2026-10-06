@@ -1,0 +1,40 @@
+# Data & datasets (never tracked - licensing)
+data/
+!data/.gitkeep
+*.zip
+*.tar
+*.tar.gz
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+*.bin
+weights/
+
+# Caches & build
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Runtime storage (index + metadata sidecar)
+storage/
+
+# Benchmark outputs (regenerable)
+benchmarks/out/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
