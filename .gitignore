@@ -33,6 +33,8 @@ storage/
 # Benchmark outputs (regenerable)
 benchmarks/out/
 
+*.log
+
 # IDE / OS
 .idea/
 .vscode/
