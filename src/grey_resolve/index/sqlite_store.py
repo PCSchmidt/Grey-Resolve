@@ -67,7 +67,9 @@ class SqliteMetadataStore:
 
     def __init__(self, path: str | Path = ":memory:") -> None:
         self._path = str(path)
-        self._conn = sqlite3.connect(self._path)
+        # check_same_thread=False: the REST service may touch the store from
+        # FastAPI worker threads; calls are serialized at the app layer.
+        self._conn = sqlite3.connect(self._path, check_same_thread=False)
         try:
             with self._conn:
                 self._conn.execute(_SCHEMA)

@@ -56,6 +56,20 @@ class Pipeline:
         self._fusion = fusion
         self._next_id = start_id
 
+    # -- introspection (used by /health) ---------------------------------
+
+    @property
+    def model_id(self) -> str:
+        return str(getattr(self._extractor, "model_id", "unknown"))
+
+    @property
+    def index_size(self) -> int:
+        return int(self._index.size)
+
+    @property
+    def profile_name(self) -> str:
+        return self._profile.name
+
     # -- ingest ---------------------------------------------------------
 
     def ingest(self, media: MediaItem, image_bgr: np.ndarray) -> list[IngestResult]:
