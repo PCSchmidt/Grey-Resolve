@@ -90,7 +90,9 @@ def load_dataset(
     if limit is not None and limit < 1:
         raise ValueError("limit must be >= 1")
 
-    ident_dirs = sorted(p for p in root.iterdir() if p.is_dir())
+    ident_dirs = sorted(
+        p for p in root.iterdir() if p.is_dir() and not p.name.startswith("._")
+    )
     if max_identities is not None:
         if max_identities < 2:
             raise ValueError("max_identities must be >= 2")
@@ -99,7 +101,12 @@ def load_dataset(
     images: list[np.ndarray] = []
     labels: list[str] = []
     for ident_dir in ident_dirs:
-        files = sorted(f for f in ident_dir.iterdir() if f.suffix.lower() in IMAGE_SUFFIXES)
+        # skip macOS AppleDouble sidecars (._*.jpg, 176 bytes) -- see PORT_INVENTORY §3
+        files = sorted(
+            f
+            for f in ident_dir.iterdir()
+            if f.suffix.lower() in IMAGE_SUFFIXES and not f.name.startswith("._")
+        )
         if limit is not None:
             files = files[:limit]
         for file in files:
