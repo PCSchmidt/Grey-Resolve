@@ -614,6 +614,9 @@ def run_ambiguity_ablation(
     truths = [ev.query.persona_id for ev in evidence]
     face_ranked = [_rank_personas(ev, None, "face") for ev in evidence]
     fused_ranked = _score_fused(evidence, scorer, None)
+    tb_ranked_all = (
+        [_rank_tiebreak(ev, scorer, gate) for ev in evidence] if gate is not None else None
+    )
     gap_le: dict[str, Any] = {}
     for t in thresholds:
         idx = [
@@ -623,11 +626,17 @@ def run_ambiguity_ablation(
         ]
         face_sub = _aggregate([face_ranked[i] for i in idx], [truths[i] for i in idx], kk)
         fused_sub = _aggregate([fused_ranked[i] for i in idx], [truths[i] for i in idx], kk)
+        tb_sub = (
+            _aggregate([tb_ranked_all[i] for i in idx], [truths[i] for i in idx], kk)
+            if tb_ranked_all is not None
+            else None
+        )
         gap_le[f"{t:g}"] = {
             "gap_max": float(t),
             "n_queries": face_sub["n_queries"],
             "face_only": face_sub,
             "fused": fused_sub,
+            "tiebreak": tb_sub,
             "delta": {
                 key: (
                     None
@@ -637,6 +646,9 @@ def run_ambiguity_ablation(
                 for key in ("hit_at_1", "hit_at_k", "mrr")
             },
         }
+    tb_ranked_all = (
+        [_rank_tiebreak(ev, scorer, gate) for ev in evidence] if gate is not None else None
+    )
     selective_block = None
     selective_delta = None
     tiebreak_block = None
@@ -646,7 +658,7 @@ def run_ambiguity_ablation(
         selective_block = _method_block(evidence, sel_ranked, kk, include_per_set=True)
         face_block = _method_block(evidence, face_ranked, kk, include_per_set=False)
         selective_delta = _delta_block(selective_block, face_block)
-        tb_ranked = [_rank_tiebreak(ev, scorer, gate) for ev in evidence]
+        tb_ranked = tb_ranked_all
         tiebreak_block = _method_block(evidence, tb_ranked, kk, include_per_set=True)
         tiebreak_delta = _delta_block(tiebreak_block, face_block)
     return {

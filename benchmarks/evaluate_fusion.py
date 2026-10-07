@@ -553,10 +553,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
     for t_key, block in ablation.get("gap_le", {}).items():
         fo, fu, d = block["face_only"], block["fused"], block["delta"]
+        tb = block.get("tiebreak")
+        tb_txt = ""
+        if tb is not None and tb["hit_at_1"] is not None:
+            tb_txt = f" tiebreak hit@1={tb['hit_at_1']:.3f} delta={tb['hit_at_1'] - fo['hit_at_1']:+.3f}"
         if block["n_queries"]:
             print(
                 f"  gap<={t_key:<5} n={block['n_queries']:<4} face hit@1={fo['hit_at_1']:.3f} "
-                f"fused hit@1={fu['hit_at_1']:.3f} delta={d['hit_at_1']:+.3f} "
+                f"fused hit@1={fu['hit_at_1']:.3f} delta={d['hit_at_1']:+.3f}{tb_txt} "
                 f"(mrr {fo['mrr']:.3f}->{fu['mrr']:.3f})"
             )
         else:
