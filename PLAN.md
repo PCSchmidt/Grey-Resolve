@@ -62,12 +62,19 @@ Acceptance criteria:
 - Ablation table shows fusion benefit (or honestly reports it does not).
 - Every metric traceable to a scenario config (reproducible).
 
-### Phase 3 — Stretch
+### Phase 3 — Presentation (completed 2026-10-07)
 
-- Docker Compose: inference API + Qdrant (migration path from FAISS justified in docs).
-- ONNX INT8 export of the embedding model + accuracy delta report.
-- Latency profiler: edge-vs-cloud lookup benchmarks.
-- Cut list if time runs short: Qdrant migration and INT8 export; the README still tells the story.
+- ~~Docker Compose: inference API + Qdrant~~ — **done**: `docker/` (API + Qdrant
+  services, weights never baked into images) and `QdrantVectorIndex` with local-mode
+  tests; `GREY_RESOLVE_INDEX=qdrant` switches the serve entrypoint.
+- ~~Latency profiler~~ — **done**: `benchmarks/latency_profiler.py` (index-size sweep
+  HNSW vs brute force + pipeline mode). HNSW p95 <= 1.6 ms at 50k vectors vs brute
+  force ~29 ms.
+- ~~Figures~~ — **done** (delivered instead of the cut item): `benchmarks/make_figures.py`
+  renders ROC/EER/gate/fusion figures into `docs/figures/` from committed run artifacts;
+  sanitized aggregate metrics in `docs/results/`.
+- **Cut as planned:** ONNX INT8 export + accuracy delta (kept as future work in the
+  README).
 
 ## Risks and mitigations
 

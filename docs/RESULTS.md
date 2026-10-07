@@ -233,3 +233,10 @@ and a guarded design (evidence-only top-2 tiebreak) that is provably safe. The l
 path to positive gains is stronger context features (co-occurrence graphs, richer text
 signals) rather than different fusion math -- that is future work, and the harness here
 is exactly what would evaluate it.
+
+## Latency (2026-10-07, latency runs in docs/results/latency-*.json)
+
+Synthetic index-size sweep, 512-d unit-norm vectors, CPU: FaissHNSW search p95 <= 1.6 ms
+at 50k vectors (k <= 100) vs ~29 ms for the numpy brute-force oracle on identical data.
+Full percentile tables and build times in the sanitized results JSONs; regenerate with
+`python benchmarks/latency_profiler.py`.

@@ -30,7 +30,7 @@ Grey-Resolve studies two engineering responses:
 |---|---|---|
 | 1 | Backbone + FIQA gate + FAISS/HNSW + SQLite metadata + degraded-input ROC benchmarks | **complete** |
 | 2 | Synthetic scenario generator + contextual fusion + honest ablation | **complete** (honest negative) |
-| 3 | Docker + Qdrant migration path + figures + latency profiling | in progress |
+| 3 | Docker + Qdrant migration path + figures + latency profiling | **complete** (ONNX INT8 cut) |
 
 Full findings with numbers and limitations: [`docs/RESULTS.md`](docs/RESULTS.md).
 Figures generated from the run artifacts: [`docs/figures/`](docs/figures/).
@@ -47,6 +47,10 @@ Beyond the pipeline itself, the engineering story is in the evaluation:
   are different problems.
 - **A quality gate that measurably helps.** FIQA-gated scoring lowers FNMR at a fixed
   threshold in nearly every condition and never materially worsens it.
+- **Deployment and performance, measured.** Docker Compose packaging (API + Qdrant;
+  model weights deliberately never baked into images — non-commercial terms enforced at
+  build time), a tested FAISS→Qdrant migration path, and a latency profiler: HNSW search
+  p95 ≤ 1.6 ms at 50k vectors vs ~29 ms for exact brute force.
 - **Honest negative science on the fusion hypothesis.** The project's central claim —
   that contextual metadata resolves face-recognition near-ties — was tested at scale and
   is *not supported* on this data with the tested context model. Raw fusion actively
