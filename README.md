@@ -24,6 +24,12 @@ Grey-Resolve studies two engineering responses:
    using lightweight metadata (time, coarse geo, source, text entities) on a synthetic
    scenario dataset.
 
+**[▶ Live demo — the Resolution Console](https://pcschmidt.github.io/Grey-Resolve/)**
+— a "forbidden cockpit" UI for the entity-resolution pipeline: streaming synthetic media
+contacts, quality-gate decisions, a 3D embedding manifold that resolves face near-ties
+with context, and live degradation modes. Hosted on GitHub Pages (see
+[`docs/PAGES.md`](docs/PAGES.md)); all metric telemetry traces to real run artifacts.
+
 ## Status
 
 | Phase | Scope | Status |
@@ -31,6 +37,7 @@ Grey-Resolve studies two engineering responses:
 | 1 | Backbone + FIQA gate + FAISS/HNSW + SQLite metadata + degraded-input ROC benchmarks | **complete** |
 | 2 | Synthetic scenario generator + contextual fusion + honest ablation | **complete** (honest negative) |
 | 3 | Docker + Qdrant migration path + figures + latency profiling | **complete** (ONNX INT8 cut) |
+| 4 | Demo UI (Resolution Console, GitHub Pages) | **complete** |
 
 Full findings with numbers and limitations: [`docs/RESULTS.md`](docs/RESULTS.md).
 Figures generated from the run artifacts: [`docs/figures/`](docs/figures/).

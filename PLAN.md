@@ -76,6 +76,15 @@ Acceptance criteria:
 - **Cut as planned:** ONNX INT8 export + accuracy delta (kept as future work in the
   README).
 
+### Phase 4 — Demo UI (added 2026-10-07, completed)
+
+- **Resolution Console** (`docs/index.html` + `docs/demo/`): a "forbidden cockpit"
+  single-page demo on GitHub Pages — streaming synthetic contacts with trust badges,
+  3D embedding manifold with tie-break resolution sequences, live degradation modes
+  (the project's own operators), telemetry from sanitized real runs.
+- Constraints held: zero face imagery (procedural tiles only), persistent synthetic
+  banner, no identification language, no build step (vanilla ESM + three.js CDN).
+
 ## Risks and mitigations
 
 | Risk | Mitigation |
