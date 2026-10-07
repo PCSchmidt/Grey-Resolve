@@ -24,11 +24,19 @@ Grey-Resolve studies two engineering responses:
    using lightweight metadata (time, coarse geo, source, text entities) on a synthetic
    scenario dataset.
 
-**[▶ Live demo — the Resolution Console](https://pcschmidt.github.io/Grey-Resolve/)**
-— a "forbidden cockpit" UI for the entity-resolution pipeline: streaming synthetic media
-contacts, quality-gate decisions, a 3D embedding manifold that resolves face near-ties
-with context, and live degradation modes. Hosted on GitHub Pages (see
-[`docs/PAGES.md`](docs/PAGES.md)); all metric telemetry traces to real run artifacts.
+<div align="center">
+
+![The Resolution Console — synthetic contacts, tie-break resolution, live degradation modes](docs/demo/hero.gif)
+
+**[▶ Open the Resolution Console](https://pcschmidt.github.io/Grey-Resolve/)**
+
+</div>
+
+A "forbidden cockpit" UI for the entity-resolution pipeline: streaming synthetic media
+contacts with quality-gate decisions, a 3D embedding manifold that resolves face
+near-ties with context (and honestly reports when context does not decide), live
+degradation modes, and telemetry sourced from the real run artifacts. Hosted on GitHub
+Pages ([`docs/PAGES.md`](docs/PAGES.md)); fabricated demo data, real metric values.
 
 ## Status
 
