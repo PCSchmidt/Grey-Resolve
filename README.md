@@ -1,28 +1,8 @@
-# Grey-Resolve
+# Grey-Resolve — degraded-media entity resolution
 
-Multimodal entity resolution pipeline for degraded, uncurated media. Fuses face
-embeddings with contextual metadata (temporal, geo, text entities) via vector search to
-disambiguate identities across low-resolution, off-angle imagery. Includes face-quality
-(FIQA) gating, HNSW indexing, and operational FMR/FNMR benchmarks.
-
-> **Research prototype — not for operational use.** This project is a portfolio
-> demonstration built on synthetic and public research data. It performs candidate
-> *ranking* for media similarity research; it does not identify people, assert identities,
-> or make access-control decisions. See [Ethics & limitations](#ethics--limitations).
-
-## Why this exists
-
-Intelligence and defense workflows increasingly operate on *grey-zone* data: uncurated,
-low-resolution, off-angle media from open sources. Pure vector similarity degrades badly
-under blur, poor lighting, and oblique angles, producing ambiguous candidate sets.
-Grey-Resolve studies two engineering responses:
-
-1. **Quality-aware retrieval** — a face image quality (FIQA) gate that flags low-trust
-   inputs instead of indexing them with full confidence, and honest FMR/FNMR trade-off
-   curves under controlled degradation.
-2. **Contextual disambiguation** — a fusion scorer that breaks near-ties in face similarity
-   using lightweight metadata (time, coarse geo, source, text entities) on a synthetic
-   scenario dataset.
+**Live demo: https://pcschmidt.github.io/Grey-Resolve/** (the Resolution Console —
+a static "forbidden cockpit" UI on GitHub Pages; fabricated demo data, real metric
+telemetry). Also runnable locally from `docs/` — see [`docs/PAGES.md`](docs/PAGES.md).
 
 <div align="center">
 
@@ -32,61 +12,118 @@ Grey-Resolve studies two engineering responses:
 
 </div>
 
-A "forbidden cockpit" UI for the entity-resolution pipeline: streaming synthetic media
-contacts with quality-gate decisions, a 3D embedding manifold that resolves face
-near-ties with context (and honestly reports when context does not decide), live
-degradation modes, and telemetry sourced from the real run artifacts. Hosted on GitHub
-Pages ([`docs/PAGES.md`](docs/PAGES.md)); fabricated demo data, real metric values.
+## What is this? (plain-language overview)
 
-## Status
+Grey-Resolve answers one question: *when face evidence degrades and several identities
+look genuinely alike, can contextual metadata resolve the ambiguity — and how do you
+know when it cannot?* It is an entity-resolution pipeline over degraded, uncurated
+media: detect a face, quality-gate it, embed it, retrieve near-duplicates, and try to
+break the resulting near-ties with lightweight context (time, coarse geo, source,
+text entities). It was built from an adapted vector-search coursework project
+(IronClad, JHU 705.603) and re-scoped around the evaluation practices that
+mission-critical ML actually demands.
 
-| Phase | Scope | Status |
-|---|---|---|
-| 1 | Backbone + FIQA gate + FAISS/HNSW + SQLite metadata + degraded-input ROC benchmarks | **complete** |
-| 2 | Synthetic scenario generator + contextual fusion + honest ablation | **complete** (honest negative) |
-| 3 | Docker + Qdrant migration path + figures + latency profiling | **complete** (ONNX INT8 cut) |
-| 4 | Demo UI (Resolution Console, GitHub Pages) | **complete** |
+> Detect → quality-gate → embed → retrieve → fuse context → **resolve, or honestly
+> decline to resolve.**
 
-Full findings with numbers and limitations: [`docs/RESULTS.md`](docs/RESULTS.md).
-Figures generated from the run artifacts: [`docs/figures/`](docs/figures/).
+The name is a double play: **grey-zone** media (low-resolution, off-angle, uncurated
+open sources) and entity **resolution**. The defense-intelligence framing is the
+motivation; the deliverable is the engineering — and the honesty.
 
-## What this project demonstrates
+The thing that makes it more than a face-matching demo:
 
-Beyond the pipeline itself, the engineering story is in the evaluation:
-
-- **Operational benchmarking, not accuracy percentages.** EER, FMR/FNMR and ROC curves
-  per degradation type (blur, downsampling, brightness, rotation), from one command,
-  with detection failures counted per condition rather than hidden. Headline: EER stays
-  near zero until degradation is severe (blur σ=8: EER 0.078) while FMR@FNMR=1%
-  explodes (downsample ×0.1: 0.873) — ranking quality and operating-point calibration
-  are different problems.
+- **Operational benchmarking, not accuracy percentages.** EER, FMR/FNMR and ROC
+  curves per degradation type (blur, downsampling, brightness, rotation), produced
+  from one command, with detection failures counted per condition rather than hidden.
+  The headline finding is structural: **ranking quality ≠ operating-point
+  calibration** — EER stays near zero while FMR@FNMR=1% explodes to 0.873 under
+  severe downsampling. Thresholds must be calibrated per condition.
 - **A quality gate that measurably helps.** FIQA-gated scoring lowers FNMR at a fixed
-  threshold in nearly every condition and never materially worsens it.
-- **Deployment and performance, measured.** Docker Compose packaging (API + Qdrant;
-  model weights deliberately never baked into images — non-commercial terms enforced at
-  build time), a tested FAISS→Qdrant migration path, and a latency profiler: HNSW search
-  p95 ≤ 1.6 ms at 50k vectors vs ~29 ms for exact brute force.
-- **Honest negative science on the fusion hypothesis.** The project's central claim —
-  that contextual metadata resolves face-recognition near-ties — was tested at scale and
-  is *not supported* on this data with the tested context model. Raw fusion actively
-  harms ties (−0.33 hit@1 on the tightest slice); the failure mechanism was diagnosed
-  (extreme-value noise from many competing context scores) and a guarded top-2 tiebreak
-  design is provably safe but neutral. Findings 6–9 in
-  [`docs/RESULTS.md`](docs/RESULTS.md) document the full arc, including the small-n
-  positive result that did not replicate. This is the kind of evaluation honesty that
-  matters in mission-critical ML — and it is reproducible from committed scripts.
+  operating threshold in nearly every condition and never materially worsens it —
+  and where quality is genuinely bad the gate rejects almost everything instead of
+  letting bad matches through.
+- **Honest negative science on the fusion claim.** The project's central hypothesis —
+  context resolves face near-ties — was tested at scale and is **not supported** on
+  this data with the tested context model. A small-n positive result (n=4) did not
+  replicate at scale (n=18, reversed sign); the failure mechanism was diagnosed
+  (extreme-value noise from many competing context scores) and a guarded top-2
+  tiebreak design was shown to be provably safe but neutral. Findings 6–9 in
+  [`docs/RESULTS.md`](docs/RESULTS.md) document the full arc. This is the evaluation
+  honesty that matters in mission-critical ML — and every step is reproducible from
+  committed scripts.
+- **Defense framing without surveillance tooling.** Synthetic and public research
+  data only; no face imagery in the repo or the UI; candidate *ranking* semantics
+  everywhere ("ranking is not authorization"); an explicit non-operational banner.
+
+You can drive it three ways:
+
+1. **The published console** — boot sequence, streaming synthetic contacts with
+   trust badges, a 3D embedding manifold with tie-break resolution sequences, live
+   degradation modes driven by the project's own operators, and a telemetry ticker
+   sourced from real run artifacts.
+2. **The evaluation suites** — `.venv/Scripts/python -m pytest -q` (241 tests),
+   `python benchmarks/evaluate_roc.py` (degraded-input ROC/FMR/FNMR sweeps),
+   `python benchmarks/evaluate_fusion.py` (face-only vs fused vs selective vs
+   tiebreak, context-noise sweeps, face-gap slices), `python benchmarks/make_figures.py`
+   (regenerate every figure), `python benchmarks/latency_profiler.py`.
+3. **The service + stack** — FastAPI (`/ingest`, `/search`, `/health`) over the real
+   pipeline, or `docker compose up` in `docker/` (API + Qdrant; model weights are
+   deliberately never baked into images).
+
+| | |
+| --- | --- |
+| Live demo | https://pcschmidt.github.io/Grey-Resolve/ — Resolution Console, static, GitHub Pages from `docs/` |
+| Pipeline | SCRFD detection → FIQA-lite gate → InsightFace ArcFace (w600k_r50, 512-d) → FAISS HNSW + SQLite metadata sidecar |
+| Benchmarks | Degraded-input ROC/FMR/FNMR/EER sweeps + quality-gate ablation + fusion ablation (face / fused / selective / tiebreak) |
+| Latency | HNSW search p95 ≤ 1.6 ms at 50k vectors vs ~29 ms exact brute force (CPU) |
+| Tests | 241 green (pytest), deterministic, no weights needed for the suite |
+| Deployment | FastAPI service; Docker Compose (API + Qdrant, weights at runtime via volume); tested FAISS→Qdrant migration path |
+| Licence | MIT (code) · model weights non-commercial and never redistributed (see `THIRD_PARTY_NOTICES.md`) |
+| Definitive result | Quality gate: FNMR 0.028 → 0.020 at threshold 0.5 on clean probes. Fusion claim: **not supported** (tiebreak Δ +0.000 / −0.056 on n=18) |
+| Honest scope | Research prototype on LFW-derived research data + synthetic scenarios; nothing here transfers to real-world operational accuracy claims |
+
+## Architecture at a glance
+
+```mermaid
+flowchart TD
+    M["uncurated media + metadata"] --> D["detection (SCRFD)<br>+ FIQA-lite quality gate"]
+    D --> E["ArcFace embedding<br>112px landmark-aligned, 512-d"]
+    E --> I["FAISS HNSW (cosine)<br>+ SQLite metadata sidecar"]
+    I --> F["fusion scoring<br>face / fused / selective / top-2 tiebreak"]
+    F --> R["ranked candidates<br>-- ranking, never identification"]
+    B["benchmarks/"] --> D
+    B --> E
+    B --> F
+    B --> V["ROC/FMR/FNMR + gate + fusion ablations<br>docs/RESULTS.md · docs/figures/"]
+    S["scenario generator<br>synthetic personas + context"] --> B
+```
+
+## What the evaluation shows
+
+Full findings with numbers, caveats, and run ids: [`docs/RESULTS.md`](docs/RESULTS.md);
+figures: [`docs/figures/`](docs/figures/); sanitized aggregate metrics:
+[`docs/results/`](docs/results/).
+
+| Finding | Result |
+| --- | --- |
+| Degraded-input sweep (138 images / 100 identities) | EER ≈ 0 until severe degradation; blur σ=8 → EER 0.078; downsample ×0.1 → EER 0.046 but FMR@FNMR=1% = 0.873 |
+| Detection failure | A first-class, per-condition counted outcome (42/138 probes at brightness Δ=0.75) — never a crash, never hidden |
+| Quality gate ablation | Gated FNMR ≤ full FNMR in nearly every condition (blur σ=3: 0.127 → 0.000); collapses to zero pass-rate exactly where quality is bad |
+| Fusion ablation | Raw fusion harms ties (0.500 → 0.167 hit@1 at gap ≤ 0.05); selective gating reduces but does not remove the damage; top-2 tiebreak is safe (±0.02) but neutral |
+| Latency | HNSW p95 ≤ 1.6 ms at 50k vectors vs ~29 ms brute force (CPU, 512-d) |
 
 ## Repository structure
 
-See [`PLAN.md`](PLAN.md) for the target layout and [`ARCHITECTURE.md`](ARCHITECTURE.md)
-for component and data-flow design. Supporting docs in [`docs/`](docs/):
-
-- [`docs/BACKBONE_LICENSES.md`](docs/BACKBONE_LICENSES.md) — license review gating the
-  embedding-backbone choice.
-- [`docs/PORT_INVENTORY.md`](docs/PORT_INVENTORY.md) — what is adapted from the earlier
-  IronClad coursework and at what effort.
-- [`docs/SYNTHETIC_SCENARIO_SPEC.md`](docs/SYNTHETIC_SCENARIO_SPEC.md) — Phase 2 synthetic
-  scenario dataset spec.
+```text
+grey-resolve/
+├── src/grey_resolve/          # pipeline: detection, embeddings, index, fusion, api, plotting
+├── benchmarks/                # evaluate_roc · evaluate_fusion · latency_profiler · make_figures
+├── configs/                   # HNSW hyperparameters · operating profiles · scenario config
+├── docker/                    # Dockerfile · docker-compose.yaml · serve entrypoint (weights never baked in)
+├── docs/                      # RESULTS.md · figures/ · results/ · PAGES.md · the demo UI (index.html + demo/)
+├── scripts/                   # fetch_backbone.py (runtime weights) · demo/diagnostic tooling
+└── tests/                     # 241 tests, deterministic
+```
 
 ## Getting started
 
@@ -98,33 +135,34 @@ python scripts/fetch_backbone.py          # downloads non-commercial weights at 
 .venv/Scripts/python -m pytest -q         # run the test suite
 ```
 
-Weights are downloaded at runtime and never committed (see
-`THIRD_PARTY_NOTICES.md`). Datasets with
-non-commercial research terms (e.g. LFW, CASIA-WebFace, VGGFace2) are **never** included in this
-repository; loaders expect user-supplied local data.
+Weights are downloaded at runtime and never committed (`THIRD_PARTY_NOTICES.md`).
+Datasets with non-commercial research terms (LFW, CASIA-WebFace, VGGFace2) are
+**never** included; loaders expect user-supplied local data, and the Phase 2 scenario
+data is entirely synthetic.
 
 ## Ethics & limitations
 
 - **Synthetic and public data only.** No real persons, real incidents, or operational
-  intelligence data are used in code, tests, or benchmarks. Phase 2 scenario data is
-  entirely fabricated and clearly labeled as such.
+  intelligence data in code, tests, benchmarks, or the UI. The demo console uses
+  procedural abstract tiles — deliberately no face imagery, even synthetic.
 - **Ranking, not identification.** The system returns scored similarity candidates.
-  Interpreting those candidates as identity claims is out of scope and unsupported.
-- **Known failure modes.** Face recognition degrades sharply on demographic subgroups,
-  heavy occlusion, and extreme pose; quality gating reduces but does not remove this.
-  Synthetic-set results do not transfer to real-world accuracy claims.
-- **No surveillance tooling.** The repo deliberately excludes watchlist ingestion, real
-  OSINT scraping, and gait/body re-identification.
+  Interpreting candidates as identity claims is out of scope and unsupported.
+- **Known failure modes.** Face recognition degrades sharply on demographic
+  subgroups, heavy occlusion, and extreme pose; quality gating reduces but does not
+  remove this. Synthetic-set and LFW-derived results do not transfer to real-world
+  accuracy claims.
+- **No surveillance tooling.** No watchlist ingestion, no real OSINT scraping, no
+  gait/body re-identification.
 
-## License
+## Licence
 
-Code: [MIT](LICENSE). Pretrained model weights referenced by this project (InsightFace
-buffalo_l) have their own **non-commercial** terms and are not redistributed here — see
+Code: [MIT](LICENSE). Pretrained model weights (InsightFace buffalo_l) have their own
+**non-commercial** terms and are not redistributed — see
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
 [`docs/BACKBONE_LICENSES.md`](docs/BACKBONE_LICENSES.md).
 
 ## Acknowledgment
 
 Adapted from coursework completed for JHU 705.603 Creating AI-Enabled Systems
-(IronClad vector-search assignment). Course code informed the design; this repository is
-an independent, re-scoped implementation.
+(IronClad vector-search assignment). Course code informed the design; this repository
+is an independent, re-scoped implementation.
