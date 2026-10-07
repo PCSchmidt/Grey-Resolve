@@ -140,6 +140,43 @@ Datasets with non-commercial research terms (LFW, CASIA-WebFace, VGGFace2) are
 **never** included; loaders expect user-supplied local data, and the Phase 2 scenario
 data is entirely synthetic.
 
+## Glossary
+
+Acronyms used above, defined once:
+
+| Acronym | Stands for | What it means here |
+| --- | --- | --- |
+| ROC | Receiver Operating Characteristic | Curve of true- vs false-match behaviour as the decision threshold moves; the project's main evaluation plot |
+| EER | Equal Error Rate | The error rate at the threshold where false matches and false non-matches are equal; single-number summary of a ROC curve |
+| FMR | False Match Rate | Fraction of impostor (different-identity) comparisons scored as matches at a given threshold |
+| FNMR | False Non-Match Rate | Fraction of genuine (same-identity) comparisons scored as non-matches at a given threshold |
+| FMR@FNMR=1% | — | The false-match rate once the threshold is set so that only 1% of genuine comparisons are missed; the strict operating point used throughout |
+| FIQA | Face Image Quality Assessment | Scoring how usable a face image is before trusting its match; here a lightweight heuristic (sharpness, exposure, size) behind a swappable interface |
+| SCRFD | — (model name from the InsightFace paper) | The face detector bundled with InsightFace; finds face bounding boxes and 5-point landmarks used for alignment |
+| ArcFace | — (model/training-method name) | The face-embedding model family used here (InsightFace `w600k_r50`): turns an aligned face crop into a 512-d vector |
+| FAISS | Facebook AI Similarity Search | The library that stores and searches the face vectors |
+| HNSW | Hierarchical Navigable Small World | The approximate-nearest-neighbour graph index used in FAISS; fast search with tunable accuracy (recall 0.99 vs exact in our tests) |
+| SQLite | Structured Query Language Lite | The embedded database holding per-vector metadata (time, geo, source, text entities) beside the FAISS index |
+| API | Application Programming Interface | The REST service (`/ingest`, `/search`, `/health`) over the pipeline |
+| FastAPI | — (framework name) | The Python web framework serving the API |
+| OSINT | Open-Source Intelligence | The grey-zone data context (public media streams) motivating the project; no real OSINT collection is performed |
+| LFW | Labeled Faces in the Wild | The public research face dataset the local course gallery derives from; research-only, never redistributed here |
+| CASIA-WebFace | CASIA (Chinese Academy of Sciences, Institute of Automation) WebFace | Another research face dataset with non-commercial terms — named only in licence discussions |
+| VGGFace2 | Visual Geometry Group Face 2 (Oxford VGG group) | Same: named only in licence discussions, never shipped |
+| MIT | Massachusetts Institute of Technology | The licence this code is released under |
+| CPU | Central Processing Unit | All latency numbers are CPU-only (no GPU) |
+| UI | User Interface | The Resolution Console demo |
+| 3D | three-dimensional | The embedding-manifold view in the demo |
+
+Terms used above that are not acronyms: **near-tie** — two identities whose face
+scores are almost equal (the ambiguity regime, defined by the measured top-1/top-2
+face-score *gap*); **ablation** — the same experiment run with one component
+switched off (e.g. face-only vs fused) to measure that component's contribution;
+**probe / gallery** — the query images being verified against the enrolled reference
+set; **operating threshold** — the score cutoff at which a comparison becomes a
+"match"; **synthetic scenario** — a fabricated dataset of personas and metadata
+(never real people) used to stress-test the fusion logic.
+
 ## Ethics & limitations
 
 - **Synthetic and public data only.** No real persons, real incidents, or operational
