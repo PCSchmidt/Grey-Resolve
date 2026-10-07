@@ -195,3 +195,41 @@ than the tied regime the gate selects. Until the mechanism is diagnosed and fixe
 claim "context breaks face near-ties" is NOT supported on this data; what remains
 supported: the degradation/quality-gate findings (1-4), the tie-regime *definition*
 (gap-based subsetting), and the value of honest negative reporting (Findings 6-8).
+
+## Phase 2 close-out: tiebreak verification (2026-10-07, run 557189Z)
+
+Same at-scale protocol (200 identities / 60 personas, downsample x0.1 queries, seed 42).
+All four methods side by side:
+
+| Method | overall | gap<=0.05 (n=18) | gap<=0.1 (n=27) | gap<=0.2 (n=66) |
+|---|---|---|---|---|
+| face-only | **0.906** | **0.500** | 0.630 | 0.848 |
+| fused (raw) | 0.774 | 0.167 | 0.407 | 0.667 |
+| selective (gap-gated full fusion) | 0.849 | — | — | — |
+| tiebreak (top-2, evidence-only) | 0.906 | 0.444 | 0.630 | 0.848 |
+
+Tiebreak noise sweep: delta stays within +0.009/-0.019 of face-only across noise rates
+0.0-0.5 (raw fused degrades to -0.208).
+
+**Finding 9 -- Guarded context fusion is safe but neutral on this data; the context
+signal is too weak at item level to resolve face ties.** The top-2 tiebreak contains the
+ranking pathology completely (tight-slice damage -0.333 -> -0.056, overall exactly
+face-only, robust under noise). But it does not create gains: on the tightest slice it
+nets -1 query of 18 (within noise), and on all wider slices exactly 0.000. Diagnosis
+chain for the record: (a) the per-comparison context signal is real (clean queries beat
+89% of individual rival contexts), (b) full-candidate fusion is destroyed by
+extreme-value noise from 59 competing context kicks under beta=0.3 (Finding 8), (c) the
+pairwise top-2 decision on real face rivals sees a much weaker signal than the
+per-comparison average -- item-level fabricated context is noisy (only 52% of queries
+carry clean context; peers carry sampled vocab subsets), and a 2-way decision on a
+correctly-ranked face tie is a pure coin flip against corrupted context.
+
+**Phase 2 conclusion (honest).** The claim "context breaks face near-ties" is NOT
+supported on this data with this context model. What the project demonstrates instead is
+a complete, honest evaluation methodology: an ambiguity regime defined by measured face
+gaps; per-method, per-slice, per-noise reporting; negative regions reported rather than
+suppressed (Findings 6-9); a diagnosed failure mechanism (extreme-value fusion path);
+and a guarded design (evidence-only top-2 tiebreak) that is provably safe. The likely
+path to positive gains is stronger context features (co-occurrence graphs, richer text
+signals) rather than different fusion math -- that is future work, and the harness here
+is exactly what would evaluate it.
