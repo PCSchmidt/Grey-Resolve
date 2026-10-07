@@ -131,6 +131,7 @@ grey-resolve/
 uv venv .venv                             # Python 3.12
 uv pip install -e ".[dev]"                # core deps + pytest/ruff
 uv pip install -e ".[index,backbone,api]" # faiss, insightface/onnxruntime, fastapi
+uv pip install -e ".[figures,qdrant]"     # optional: figure rendering, Qdrant index
 python scripts/fetch_backbone.py          # downloads non-commercial weights at runtime
 .venv/Scripts/python -m pytest -q         # run the test suite
 ```

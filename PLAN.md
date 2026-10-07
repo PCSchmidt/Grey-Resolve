@@ -120,34 +120,31 @@ Acceptance criteria:
    compatible with every dependency. Model-weight terms are unaffected (non-commercial
    grants travel with the weights, not with this code).
 
-## Repo layout (target)
+## Repo layout (as built)
 
 ```text
 grey-resolve/
-├── configs/
-│   ├── index_hnsw.yaml            # HNSW hyperparameters (M, efConstruction)
-│   └── threshold_profiles.yaml    # FIQA + decision thresholds per operating profile
-├── data/
-│   ├── samples/                   # Public/representative test images only
-│   └── synthetic_noise/           # Degradation simulation (blur, haze, low-res, off-angle)
+├── configs/                       # index_hnsw.yaml · threshold_profiles.yaml · scenario_v0.yaml
 ├── docs/
-│   ├── PLAN.md                    # (this file lives at repo root)
-│   ├── ARCHITECTURE.md
-│   ├── BACKBONE_LICENSES.md
-│   ├── PORT_INVENTORY.md
-│   └── SYNTHETIC_SCENARIO_SPEC.md
+│   ├── RESULTS.md                 # findings 1-9 with numbers and caveats
+│   ├── figures/ · results/        # generated figures · sanitized aggregate metrics
+│   ├── index.html + demo/         # the Resolution Console (GitHub Pages)
+│   ├── PAGES.md · BACKBONE_LICENSES.md · PORT_INVENTORY.md · SYNTHETIC_SCENARIO_SPEC.md
 ├── src/grey_resolve/
-│   ├── detection/                 # Face detection + FIQA quality gating
-│   ├── embeddings/                # Backbone feature extractor
-│   ├── index/                     # FAISS wrapper + SQLite metadata sidecar
-│   ├── fusion/                    # Multi-signal fusion scorer (Phase 2)
-│   └── api/                       # REST service
-├── benchmarks/
-│   ├── evaluate_roc.py            # FMR/FNMR + ROC under degraded inputs
-│   └── latency_profiler.py
-├── docker/                        # Phase 3
-├── README.md
-└── pyproject.toml
+│   ├── detection/                 # SCRFD adapter + FIQA-lite quality gate
+│   ├── embeddings/                # ArcFace extractor (runtime weights)
+│   ├── index/                     # FAISS HNSW + SQLite sidecar + brute-force oracle + Qdrant
+│   ├── fusion/                    # linear / selective / tiebreak scorers
+│   ├── scenario/                  # synthetic persona + context generator
+│   ├── evaluation/                # metrics · degradation sweeps · fusion ablation · latency
+│   ├── plotting/                  # figure rendering
+│   ├── pipeline.py                # ingest + search orchestration
+│   └── api/                       # FastAPI service
+├── benchmarks/                    # evaluate_roc · evaluate_fusion · latency_profiler · make_figures
+├── docker/                        # Dockerfile · compose (API + Qdrant) · serve entrypoint
+├── scripts/                       # fetch_backbone.py + demo/diagnostic tooling
+├── tests/                         # 241 deterministic tests
+├── README.md · LICENSE · THIRD_PARTY_NOTICES.md · pyproject.toml
 ```
 
 ## Related documents

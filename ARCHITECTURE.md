@@ -61,12 +61,15 @@ media to candidate identities by fusing face similarity with contextual signals.
 
 ### 4. Fusion scorer (`src/grey_resolve/fusion/`) — Phase 2
 - `S_face`: cosine similarity from the ANN search.
-- `S_context`: computed from metadata compatibility (temporal proximity, geo cluster match,
-  co-occurring entities, text-snippet signals).
-- `P = alpha*S_face + beta*S_context`; `alpha`/`beta` calibrated on the synthetic scenario
-  set and stored per operating profile.
-- Ambiguity handling: when top candidates fall in the ambiguous band (~0.65-0.75 cosine),
-  context signals decide; otherwise face score dominates.
+- `S_context`: metadata compatibility (temporal proximity, geo cluster match, entity overlap).
+- `P = alpha*S_face + beta*S_context` (`alpha`/`beta` per operating profile).
+- Ambiguity is defined by the measured **face-score gap** (top-1 vs top-2), not a fixed
+  cosine band — the originally planned 0.65-0.75 band is empty for ArcFace on this data.
+- Evaluated variants (see `docs/RESULTS.md` findings 6-9): raw fused ranking (harmful in
+  ties — extreme-value noise across many candidates), selective gap-gated fusion (still
+  harmful), and the **top-2 evidence-only tiebreak** (context decides only the top-2 face
+  candidates and only with non-absent context; safe, measured neutral). The context
+  hypothesis itself is an honest negative on this data.
 
 ### 5. API (`src/grey_resolve/api/`)
 - `POST /ingest` — media item (image + metadata) -> detection, quality gate, embed, index.
@@ -94,7 +97,8 @@ media to candidate identities by fusing face similarity with contextual signals.
 
 - `docker/docker-compose.yaml`: inference API + Qdrant (metadata as payloads) as the
   "production-like" variant; the FAISS+SQLite path remains the default reference implementation.
-- ONNX export of the embedding backbone (INT8 optional) with an accuracy-delta report.
+- ONNX INT8 export of the embedding backbone: **cut from scope** (see PLAN.md Phase 3);
+  recorded as future work.
 
 ## Design principles
 

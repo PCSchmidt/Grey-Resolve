@@ -1,7 +1,9 @@
 # Synthetic Scenario Dataset — Spec (Phase 2)
 
-Status: draft. This document specifies the fabricated scenario dataset that Phase 2's
-fusion scorer is developed and evaluated on. **Everything in this dataset is synthetic.**
+Status: **implemented** (`src/grey_resolve/scenario/generator.py`, config in
+`configs/scenario_v0.yaml`; the evaluated outcome is in `docs/RESULTS.md` findings 6-9).
+This document specifies the fabricated scenario dataset that Phase 2's fusion scorer was
+developed and evaluated on. **Everything in this dataset is synthetic.**
 No real persons, real identities, real incidents, or real intelligence data appear in it.
 
 ## Purpose
