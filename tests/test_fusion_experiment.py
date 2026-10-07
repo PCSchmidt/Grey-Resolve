@@ -570,3 +570,71 @@ def test_selective_gap_validation():
         run_ambiguity_ablation(items, _scorer(), [], selective_gap=-0.5)
     with pytest.raises(ValueError, match="selective_gap"):
         run_context_noise_sweep(items, _scorer(), [], [0.0], seed=1, selective_gap=float("inf"))
+
+
+# ---------------------------------------------------------- tiebreak (top-2, evidence-only)
+
+
+def test_tiebreak_protects_top2_from_distant_context_kicks():
+    """Raw fused ranking lets a distant rival's context kick steal top-1 from a
+    tight face top-2; the tiebreak only re-examines the top-2 and keeps face
+    order. Query context is corrupted (matches the wrong personas).
+    """
+    items = [
+        RankingItem("q", "pz", np.array([1.0, 0.0]), BETA_CTX),   # corrupted query ctx
+        RankingItem("z1", "pz", np.array([1.0, 0.02]), ALPHA_CTX),  # true peer
+        RankingItem("a1", "pa", np.array([1.0, 0.06]), ALPHA_CTX), # near rival, no kick
+        RankingItem("c1", "pc", np.array([1.0, 0.09]), BETA_CTX),  # 3rd face, huge kick
+    ]
+    out = run_ambiguity_ablation(
+        items, _scorer(), [], query_ids=["q"], selective_gap=0.05,
+    )
+    assert out["face_only"]["overall"]["hit_at_1"] == 1.0
+    assert out["fused"]["overall"]["hit_at_1"] == 0.0          # kick steals top-1
+    assert out["tiebreak"]["overall"]["hit_at_1"] == 1.0       # top-2 protected
+    assert out["tiebreak_delta"]["overall"]["hit_at_1"] == pytest.approx(0.0)
+
+
+def test_tiebreak_swaps_genuine_tight_ties():
+    """On a genuine tie where context favors the rival inside the top-2, the
+    tiebreak does swap (context decides exactly there)."""
+    r2 = float(np.sqrt(2.0))
+    items = [
+        RankingItem("q", "pz", np.array([1.0, 1.0, 0.0]) / r2, BETA_CTX,
+                    query_embedding=np.array([1.0, 0.0, 0.0])),
+        RankingItem("z1", "pz", np.array([1.0, 1.0, 0.0]) / r2, ALPHA_CTX),
+        RankingItem("a1", "pa", np.array([1.0, -1.0, 0.0]) / r2, BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(
+        items, _scorer(), [NearTieSet(("pz", "pa"), (), ())], query_ids=["q"], selective_gap=0.05,
+    )
+    # exact tie, query ctx matches pa -> context legitimately decides for pa
+    assert out["face_only"]["overall"]["hit_at_1"] == 0.0  # id tie-break favors pa
+    assert out["tiebreak"]["overall"]["hit_at_1"] == out["fused"]["overall"]["hit_at_1"]
+
+
+def test_tiebreak_keeps_face_order_on_absent_context():
+    """Absent query context is no evidence: face order must be untouched."""
+    items = [
+        RankingItem("q", "pz", np.array([1.0, 0.0]), ContextMetadata(),
+                    query_embedding=np.array([1.0, 0.0])),
+        RankingItem("z1", "pz", np.array([1.0, 0.02]), ALPHA_CTX),
+        RankingItem("a1", "pa", np.array([1.0, 0.06]), BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(items, _scorer(), [], query_ids=["q"], selective_gap=0.05)
+    assert out["tiebreak"]["overall"] == out["face_only"]["overall"]
+    assert out["tiebreak"]["overall"]["hit_at_1"] == 1.0
+
+
+def test_tiebreak_gate_protects_wide_gaps():
+    """Outside the gate the face order stands even when fused prefers the rival."""
+    items = [
+        RankingItem("q", "pz", np.array([1.0, 0.0]), BETA_CTX),
+        RankingItem("z1", "pz", np.array([1.0, 0.02]), ALPHA_CTX),
+        RankingItem("a1", "pa", np.array([1.0, 0.6]), BETA_CTX),  # face gap ~0.14
+    ]
+    out = run_ambiguity_ablation(items, _scorer(), [], query_ids=["q"], selective_gap=0.05)
+    assert out["fused"]["overall"]["hit_at_1"] == 0.0   # kick beats the wide-ish gap
+    assert out["tiebreak"]["overall"]["hit_at_1"] == 1.0  # gate: no swap outside band
+    wide = run_ambiguity_ablation(items, _scorer(), [], query_ids=["q"], selective_gap=0.5)
+    assert wide["tiebreak"]["overall"]["hit_at_1"] == 0.0  # inside the gate it does swap

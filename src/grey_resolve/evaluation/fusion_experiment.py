@@ -417,6 +417,48 @@ def _rank_selective(
     return _rank_personas(ev, None, "face")
 
 
+def _has_context(ctx: ContextMetadata) -> bool:
+    """True when the context carries any evidence at all (absent -> no evidence)."""
+    return bool(
+        ctx.timestamp is not None or ctx.geo_cluster is not None or ctx.text_entities
+    )
+
+
+def _rank_tiebreak(
+    ev: _QueryEvidence,
+    scorer: FusionScorer,
+    gap_gate: float,
+    query_context: ContextMetadata | None = None,
+) -> list[str]:
+    """Face ranking with a 2-way context tiebreak in the ambiguous regime.
+
+    Only the top-2 face candidates are re-examined, and only when (a) their
+    face-score gap is <= ``gap_gate`` and (b) the query context is non-absent.
+    Absent context is no evidence: it must never disturb face order (at beta>0
+    a zero query context lets rival context kicks win near-ties by noise).
+    Everything below the top-2 keeps its face order -- no extreme-value noise
+    from 59 competing context kicks.
+    """
+    order = _rank_personas(ev, None, "face")
+    if len(order) < 2:
+        return order
+    gap = _face_gap(ev)
+    if gap is None or gap > gap_gate:
+        return order
+    q_ctx = ev.query.context if query_context is None else query_context
+    if not _has_context(q_ctx):
+        return order
+    idx = {cid: i for i, cid in enumerate(ev.candidate_ids)}
+    i1, i2 = idx[order[0]], idx[order[1]]
+    if ev.candidate_ids[i1] == ev.candidate_ids[i2]:  # pragma: no cover - ids unique
+        return order
+    s1 = scorer.fuse(ev.face_scores[i1], q_ctx, ev.persona_contexts[i1])
+    s2 = scorer.fuse(ev.face_scores[i2], q_ctx, ev.persona_contexts[i2])
+    if s2 > s1:
+        return [order[1], order[0], *order[2:]]
+    return order
+
+
 # --------------------------------------------------------------------------- aggregates
 
 
@@ -597,11 +639,16 @@ def run_ambiguity_ablation(
         }
     selective_block = None
     selective_delta = None
+    tiebreak_block = None
+    tiebreak_delta = None
     if gate is not None:
         sel_ranked = [_rank_selective(ev, scorer, gate) for ev in evidence]
         selective_block = _method_block(evidence, sel_ranked, kk, include_per_set=True)
         face_block = _method_block(evidence, face_ranked, kk, include_per_set=False)
         selective_delta = _delta_block(selective_block, face_block)
+        tb_ranked = [_rank_tiebreak(ev, scorer, gate) for ev in evidence]
+        tiebreak_block = _method_block(evidence, tb_ranked, kk, include_per_set=True)
+        tiebreak_delta = _delta_block(tiebreak_block, face_block)
     return {
         "k": kk,
         "n_query_items": len(evidence),
@@ -611,6 +658,8 @@ def run_ambiguity_ablation(
         "fused": _method_block(evidence, fused_ranked, kk, include_per_set=True),
         "selective": selective_block,
         "selective_delta": selective_delta,
+        "tiebreak": tiebreak_block,
+        "tiebreak_delta": tiebreak_delta,
         "gap_le": gap_le,
         "face_score_gap": {
             "overall": _gap_summary(evidence),
@@ -749,6 +798,8 @@ def run_context_noise_sweep(
             "delta": delta,
             "selective": None,
             "selective_delta": None,
+            "tiebreak": None,
+            "tiebreak_delta": None,
         }
         if gate is not None:
             sel_ranked = [
@@ -763,6 +814,16 @@ def run_context_noise_sweep(
                     sel_first_negative[scope] = float(p)
             row["selective"] = sel_block
             row["selective_delta"] = sel_delta
+            tb_ranked = [
+                _rank_tiebreak(
+                    ev, scorer, gate,
+                    query_context=None if not overrides else overrides.get(ev.query.item_id),
+                )
+                for ev in evidence
+            ]
+            tb_block = _method_block(evidence, tb_ranked, kk, include_per_set=False)
+            row["tiebreak"] = tb_block
+            row["tiebreak_delta"] = _delta_block(tb_block, face_block)
         rows.append(row)
     return {
         "seed": int(seed),
