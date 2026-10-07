@@ -1,0 +1,360 @@
+{
+ "config": {
+  "data_root": "gr_bench_data",
+  "limit": null,
+  "max_identities": null,
+  "seed": 42,
+  "k": 5,
+  "profile": {
+   "name": "strict_surveillance",
+   "alpha": 0.7,
+   "beta": 0.3,
+   "ambiguous_low": 0.65,
+   "ambiguous_high": 0.75
+  },
+  "scenario_config_path": "configs/scenario_v0.yaml",
+  "scenario_config_hash": "10023c41e472e27a7368eaaded0248ccf3c44870dd8ed790837ddd97a92581e9",
+  "scenario_config": {
+   "n_identities": 30,
+   "n_geo_clusters": 5,
+   "n_periods": 4,
+   "media_per_identity": 20,
+   "context_noise_rate": 0.15,
+   "context_absent_rate": 0.2,
+   "geo_drift_rate": 0.2,
+   "clean_media_rate": 0.15,
+   "timestamp_jitter_days": 3.0,
+   "near_tie_band": [
+    0.65,
+    0.75
+   ],
+   "max_near_tie_sets": 10,
+   "seed": 42,
+   "templates": {
+    "geo_clusters": [
+     "geo-alpha",
+     "geo-beta",
+     "geo-gamma",
+     "geo-delta",
+     "geo-epsilon"
+    ],
+    "platforms": [
+     "platform-a",
+     "platform-b",
+     "platform-c",
+     "platform-d",
+     "platform-e"
+    ],
+    "archetypes": [
+     "maritime-logistics-figure",
+     "orbital-freight-broker",
+     "glacier-research-liaison",
+     "desert-solar-auditor",
+     "island-telecom-archivist",
+     "river-barge-coordinator",
+     "tundra-mapping-enthusiast",
+     "fictional-conference-circuit-speaker"
+    ],
+    "alias_templates": [
+     "alias-one",
+     "alias-two",
+     "alias-three",
+     "alias-four",
+     "alias-five"
+    ],
+    "entity_templates": [
+     "entity-ember",
+     "entity-harbor",
+     "entity-quartz",
+     "entity-lantern",
+     "entity-cascade"
+    ],
+    "degradation_types": [
+     "gaussian_blur",
+     "brightness",
+     "downsample",
+     "off_angle"
+    ]
+   }
+  },
+  "noise_rates": [
+   0.0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5
+  ],
+  "weight_ratios": null,
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "n_images": 50,
+  "n_identities": 10,
+  "n_items": 600,
+  "n_items_dropped": 0,
+  "n_embed_dropped": 0,
+  "near_tie_band": [
+   1.0,
+   1.0
+  ],
+  "near_tie_quantile": 0.98,
+  "near_tie_sets": [],
+  "run_stamp": "20261006T224945Z",
+  "created_utc": "2026-10-06T22:49:48+00:00"
+ },
+ "ablation": {
+  "k": 5,
+  "n_query_items": 600,
+  "n_skipped": 0,
+  "face_only": {
+   "overall": {
+    "n_queries": 600,
+    "hit_at_1": 0.3333333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.6111111111111112
+   },
+   "near_tie": {
+    "n_queries": 0,
+    "hit_at_1": null,
+    "hit_at_k": null,
+    "mrr": null
+   },
+   "per_set": {}
+  },
+  "fused": {
+   "overall": {
+    "n_queries": 600,
+    "hit_at_1": 0.46166666666666667,
+    "hit_at_k": 1.0,
+    "mrr": 0.6847222222222222
+   },
+   "near_tie": {
+    "n_queries": 0,
+    "hit_at_1": null,
+    "hit_at_k": null,
+    "mrr": null
+   },
+   "per_set": {}
+  },
+  "face_score_gap": {
+   "overall": {
+    "n": 600,
+    "mean": 0.0,
+    "median": 0.0
+   },
+   "near_tie": {
+    "n": 0,
+    "mean": null,
+    "median": null
+   }
+  }
+ },
+ "context_noise_sweep": {
+  "seed": 42,
+  "noise_kinds": [
+   "replace",
+   "drop"
+  ],
+  "face_only": {
+   "overall": {
+    "n_queries": 600,
+    "hit_at_1": 0.3333333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.6111111111111112
+   },
+   "near_tie": {
+    "n_queries": 0,
+    "hit_at_1": null,
+    "hit_at_k": null,
+    "mrr": null
+   }
+  },
+  "rows": [
+   {
+    "noise_rate": 0.0,
+    "n_corrupted": 0,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.46166666666666667,
+      "hit_at_k": 1.0,
+      "mrr": 0.6847222222222222
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.12833333333333335,
+      "hit_at_k": 0.0,
+      "mrr": 0.07361111111111107
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   },
+   {
+    "noise_rate": 0.1,
+    "n_corrupted": 60,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.46166666666666667,
+      "hit_at_k": 1.0,
+      "mrr": 0.685
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.12833333333333335,
+      "hit_at_k": 0.0,
+      "mrr": 0.07388888888888889
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   },
+   {
+    "noise_rate": 0.2,
+    "n_corrupted": 103,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.44666666666666666,
+      "hit_at_k": 1.0,
+      "mrr": 0.6744444444444445
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.11333333333333334,
+      "hit_at_k": 0.0,
+      "mrr": 0.06333333333333335
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   },
+   {
+    "noise_rate": 0.3,
+    "n_corrupted": 170,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.43833333333333335,
+      "hit_at_k": 1.0,
+      "mrr": 0.6722222222222222
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.10500000000000004,
+      "hit_at_k": 0.0,
+      "mrr": 0.061111111111111005
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   },
+   {
+    "noise_rate": 0.4,
+    "n_corrupted": 249,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.4266666666666667,
+      "hit_at_k": 1.0,
+      "mrr": 0.6652777777777779
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.09333333333333338,
+      "hit_at_k": 0.0,
+      "mrr": 0.054166666666666696
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   },
+   {
+    "noise_rate": 0.5,
+    "n_corrupted": 299,
+    "fused": {
+     "overall": {
+      "n_queries": 600,
+      "hit_at_1": 0.41,
+      "hit_at_k": 1.0,
+      "mrr": 0.6569444444444444
+     },
+     "near_tie": {
+      "n_queries": 0,
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.07666666666666666,
+      "hit_at_k": 0.0,
+      "mrr": 0.04583333333333328
+     },
+     "near_tie": {
+      "hit_at_1": null,
+      "hit_at_k": null,
+      "mrr": null
+     }
+    }
+   }
+  ],
+  "first_negative_delta_rate": {
+   "overall": null,
+   "near_tie": null
+  }
+ },
+ "context_weight_sweep": null
+}

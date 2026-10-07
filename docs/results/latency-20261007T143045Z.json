@@ -1,0 +1,80 @@
+{
+ "config": {
+  "sizes": [
+   50
+  ],
+  "dims": [
+   64
+  ],
+  "k": [
+   1
+  ],
+  "queries": 2,
+  "repeats": 2,
+  "warmup": 1,
+  "seed": 0,
+  "pipeline": true,
+  "data_root": "_fake_gallery",
+  "images": 3,
+  "search_k": 10,
+  "index_kinds": [
+   "faiss_hnsw",
+   "bruteforce"
+  ],
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "run_stamp": "20261007T143045Z",
+  "created_utc": "2026-10-07T14:30:45+00:00",
+  "config_hash": "65edfe0b5ad4507c"
+ },
+ "sweep": [
+  {
+   "kind": "faiss_hnsw",
+   "index_size": 50,
+   "dim": 64,
+   "k": 1,
+   "n_samples": 2,
+   "build_ms": 96.83350007981062,
+   "search_p50_ms": 0.037800054997205734,
+   "search_p90_ms": 0.04260009154677391,
+   "search_p95_ms": 0.04320009611546993,
+   "search_p99_ms": 0.04368009977042675,
+   "search_mean_ms": 0.037800054997205734
+  },
+  {
+   "kind": "bruteforce",
+   "index_size": 50,
+   "dim": 64,
+   "k": 1,
+   "n_samples": 2,
+   "build_ms": 0.10629999451339245,
+   "search_p50_ms": 0.022950000129640102,
+   "search_p90_ms": 0.025549973361194134,
+   "search_p95_ms": 0.025874970015138388,
+   "search_p99_ms": 0.02613496733829379,
+   "search_mean_ms": 0.022950000129640102
+  }
+ ],
+ "pipeline": {
+  "mode": "data_root",
+  "n_images": 3,
+  "search_k": 10,
+  "final_index_size": 0,
+  "ingest_ms": {
+   "p50": 50.84589996840805,
+   "p90": 52.55493994336575,
+   "p95": 52.768569940235466,
+   "p99": 52.939473937731236,
+   "mean": 50.84589996840805,
+   "n": 2
+  },
+  "search_ms": {
+   "p50": 45.33069988247007,
+   "p90": 46.48525982629508,
+   "p95": 46.629579819273204,
+   "p99": 46.745035813655704,
+   "mean": 45.33069988247007,
+   "n": 2
+  }
+ }
+}

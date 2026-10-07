@@ -1,0 +1,606 @@
+{
+ "config": {
+  "data_root": "multi_image_gallery",
+  "limit": 2,
+  "max_identities": 100,
+  "severity_grid": {
+   "brightness": [
+    0.25,
+    0.5,
+    0.75
+   ],
+   "downsample": [
+    0.5,
+    0.25,
+    0.1
+   ],
+   "gaussian_blur": [
+    1.0,
+    3.0,
+    8.0
+   ],
+   "off_angle": [
+    15.0,
+    30.0,
+    45.0
+   ]
+  },
+  "degradations": [
+   "brightness",
+   "downsample",
+   "gaussian_blur",
+   "off_angle"
+  ],
+  "quality_threshold": 0.5,
+  "operating_threshold": 0.5,
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "n_images": 138,
+  "n_identities": 100,
+  "run_stamp": "20261006T191330Z",
+  "created_utc": "2026-10-06T19:13:30+00:00"
+ },
+ "sweep": [
+  {
+   "condition": "clean",
+   "severity": 0.0,
+   "eer": 0.0,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.25,
+   "eer": 0.0,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.5,
+   "eer": 0.004694835680751174,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.75,
+   "eer": 0.021739130434782608,
+   "fmr_at_fnmr_0.01": 0.14948226481603877,
+   "n_pairs": 9216,
+   "n_genuine": 138,
+   "n_impostor": 9078,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 96,
+   "n_query_dropped": 42,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.5,
+   "eer": 0.0,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.25,
+   "eer": 0.004694835680751174,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.1,
+   "eer": 0.045714285714285714,
+   "fmr_at_fnmr_0.01": 0.8727298727298727,
+   "n_pairs": 14161,
+   "n_genuine": 175,
+   "n_impostor": 13986,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 119,
+   "n_query_dropped": 19,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 1.0,
+   "eer": 0.004694835680751174,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 3.0,
+   "eer": 0.004694835680751174,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 8.0,
+   "eer": 0.078125,
+   "fmr_at_fnmr_0.01": 0.5471818413669982,
+   "n_pairs": 15876,
+   "n_genuine": 192,
+   "n_impostor": 15684,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 126,
+   "n_query_dropped": 12,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "off_angle",
+   "severity": 15.0,
+   "eer": 0.0,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "off_angle",
+   "severity": 30.0,
+   "eer": 0.0,
+   "fmr_at_fnmr_0.01": 0.0,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  },
+  {
+   "condition": "off_angle",
+   "severity": 45.0,
+   "eer": 0.014084507042253521,
+   "fmr_at_fnmr_0.01": 0.256413020047424,
+   "n_pairs": 18769,
+   "n_genuine": 213,
+   "n_impostor": 18556,
+   "n_images": 138,
+   "n_gallery": 137,
+   "n_scored": 137,
+   "n_query_dropped": 1,
+   "n_gallery_dropped": 1
+  }
+ ],
+ "gated_vs_ungated": [
+  {
+   "condition": "clean",
+   "severity": 0.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.028169014084507043,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 129,
+    "pass_rate": 0.9416058394160584,
+    "n_pairs": 16641,
+    "n_genuine": 199,
+    "n_impostor": 16442,
+    "fmr": 0.0,
+    "fnmr": 0.020100502512562814,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.25,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.028169014084507043,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 77,
+    "pass_rate": 0.5620437956204379,
+    "n_pairs": 5929,
+    "n_genuine": 111,
+    "n_impostor": 5818,
+    "fmr": 0.0,
+    "fnmr": 0.018018018018018018,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.5,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.107981220657277,
+    "eer": 0.004694835680751174,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 5,
+    "pass_rate": 0.0364963503649635,
+    "n_pairs": 25,
+    "n_genuine": 5,
+    "n_impostor": 20,
+    "fmr": 0.0,
+    "fnmr": 0.0,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "brightness",
+   "severity": 0.75,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 42,
+   "full": {
+    "n": 96,
+    "pass_rate": 1.0,
+    "n_pairs": 9216,
+    "n_genuine": 138,
+    "n_impostor": 9078,
+    "fmr": 0.0,
+    "fnmr": 0.5434782608695652,
+    "eer": 0.021739130434782608,
+    "fmr_at_fnmr_0.01": 0.14948226481603877
+   },
+   "gated": {
+    "n": 0,
+    "pass_rate": 0.0,
+    "n_pairs": null,
+    "n_genuine": null,
+    "n_impostor": null,
+    "fmr": null,
+    "fnmr": null,
+    "eer": null,
+    "fmr_at_fnmr_0.01": null
+   }
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.5,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.028169014084507043,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 114,
+    "pass_rate": 0.8321167883211679,
+    "n_pairs": 12996,
+    "n_genuine": 172,
+    "n_impostor": 12824,
+    "fmr": 0.0,
+    "fnmr": 0.011627906976744186,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.25,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.107981220657277,
+    "eer": 0.004694835680751174,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 65,
+    "pass_rate": 0.4744525547445255,
+    "n_pairs": 4225,
+    "n_genuine": 85,
+    "n_impostor": 4140,
+    "fmr": 0.0,
+    "fnmr": 0.047058823529411764,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "downsample",
+   "severity": 0.1,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 19,
+   "full": {
+    "n": 119,
+    "pass_rate": 1.0,
+    "n_pairs": 14161,
+    "n_genuine": 175,
+    "n_impostor": 13986,
+    "fmr": 0.0,
+    "fnmr": 0.9885714285714285,
+    "eer": 0.045714285714285714,
+    "fmr_at_fnmr_0.01": 0.8727298727298727
+   },
+   "gated": {
+    "n": 6,
+    "pass_rate": 0.05042016806722689,
+    "n_pairs": 36,
+    "n_genuine": 6,
+    "n_impostor": 30,
+    "fmr": 0.0,
+    "fnmr": 1.0,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 1.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.03286384976525822,
+    "eer": 0.004694835680751174,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 68,
+    "pass_rate": 0.49635036496350365,
+    "n_pairs": 4624,
+    "n_genuine": 88,
+    "n_impostor": 4536,
+    "fmr": 0.0,
+    "fnmr": 0.011363636363636364,
+    "eer": 0.011363636363636364,
+    "fmr_at_fnmr_0.01": 0.5061728395061729
+   }
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 3.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.1267605633802817,
+    "eer": 0.004694835680751174,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 12,
+    "pass_rate": 0.08759124087591241,
+    "n_pairs": 144,
+    "n_genuine": 14,
+    "n_impostor": 130,
+    "fmr": 0.0,
+    "fnmr": 0.0,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "gaussian_blur",
+   "severity": 8.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 12,
+   "full": {
+    "n": 126,
+    "pass_rate": 1.0,
+    "n_pairs": 15876,
+    "n_genuine": 192,
+    "n_impostor": 15684,
+    "fmr": 0.0,
+    "fnmr": 0.9947916666666666,
+    "eer": 0.078125,
+    "fmr_at_fnmr_0.01": 0.5471818413669982
+   },
+   "gated": {
+    "n": 1,
+    "pass_rate": 0.007936507936507936,
+    "n_pairs": null,
+    "n_genuine": null,
+    "n_impostor": null,
+    "fmr": null,
+    "fnmr": null,
+    "eer": null,
+    "fmr_at_fnmr_0.01": null
+   }
+  },
+  {
+   "condition": "off_angle",
+   "severity": 15.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.028169014084507043,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 128,
+    "pass_rate": 0.9343065693430657,
+    "n_pairs": 16384,
+    "n_genuine": 198,
+    "n_impostor": 16186,
+    "fmr": 0.0,
+    "fnmr": 0.020202020202020204,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "off_angle",
+   "severity": 30.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.03286384976525822,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   },
+   "gated": {
+    "n": 128,
+    "pass_rate": 0.9343065693430657,
+    "n_pairs": 16384,
+    "n_genuine": 198,
+    "n_impostor": 16186,
+    "fmr": 0.0,
+    "fnmr": 0.025252525252525252,
+    "eer": 0.0,
+    "fmr_at_fnmr_0.01": 0.0
+   }
+  },
+  {
+   "condition": "off_angle",
+   "severity": 45.0,
+   "quality_threshold": 0.5,
+   "operating_threshold": 0.5,
+   "n_dropped": 1,
+   "full": {
+    "n": 137,
+    "pass_rate": 1.0,
+    "n_pairs": 18769,
+    "n_genuine": 213,
+    "n_impostor": 18556,
+    "fmr": 0.0,
+    "fnmr": 0.046948356807511735,
+    "eer": 0.014084507042253521,
+    "fmr_at_fnmr_0.01": 0.256413020047424
+   },
+   "gated": {
+    "n": 132,
+    "pass_rate": 0.9635036496350365,
+    "n_pairs": 17424,
+    "n_genuine": 206,
+    "n_impostor": 17218,
+    "fmr": 0.0,
+    "fnmr": 0.04854368932038835,
+    "eer": 0.014563106796116505,
+    "fmr_at_fnmr_0.01": 0.2576954350098734
+   }
+  }
+ ]
+}

@@ -1,0 +1,498 @@
+{
+ "config": {
+  "data_root": "multi_image_gallery",
+  "limit": 2,
+  "max_identities": 100,
+  "seed": 42,
+  "k": 5,
+  "profile": {
+   "name": "strict_surveillance",
+   "alpha": 0.7,
+   "beta": 0.3,
+   "ambiguous_low": 0.65,
+   "ambiguous_high": 0.75
+  },
+  "scenario_config_path": "configs/scenario_v0.yaml",
+  "scenario_config_hash": "e7cab8674e9cedd2ccf0125d309d9464a73edf06a2cee643a6042911d26b8c0b",
+  "scenario_config": {
+   "n_identities": 30,
+   "n_geo_clusters": 5,
+   "n_periods": 4,
+   "media_per_identity": 2,
+   "context_noise_rate": 0.15,
+   "context_absent_rate": 0.2,
+   "geo_drift_rate": 0.2,
+   "clean_media_rate": 0.15,
+   "timestamp_jitter_days": 3.0,
+   "near_tie_band": [
+    0.65,
+    0.75
+   ],
+   "max_near_tie_sets": 10,
+   "seed": 42,
+   "templates": {
+    "geo_clusters": [
+     "geo-alpha",
+     "geo-beta",
+     "geo-gamma",
+     "geo-delta",
+     "geo-epsilon"
+    ],
+    "platforms": [
+     "platform-a",
+     "platform-b",
+     "platform-c",
+     "platform-d",
+     "platform-e"
+    ],
+    "archetypes": [
+     "maritime-logistics-figure",
+     "orbital-freight-broker",
+     "glacier-research-liaison",
+     "desert-solar-auditor",
+     "island-telecom-archivist",
+     "river-barge-coordinator",
+     "tundra-mapping-enthusiast",
+     "fictional-conference-circuit-speaker"
+    ],
+    "alias_templates": [
+     "alias-one",
+     "alias-two",
+     "alias-three",
+     "alias-four",
+     "alias-five"
+    ],
+    "entity_templates": [
+     "entity-ember",
+     "entity-harbor",
+     "entity-quartz",
+     "entity-lantern",
+     "entity-cascade"
+    ],
+    "degradation_types": [
+     "gaussian_blur",
+     "brightness",
+     "downsample",
+     "off_angle"
+    ]
+   }
+  },
+  "noise_rates": [
+   0.0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5
+  ],
+  "weight_ratios": null,
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "n_images": 138,
+  "n_identities": 100,
+  "n_items": 60,
+  "n_items_dropped": 0,
+  "n_embed_dropped": 1,
+  "near_tie_band": [
+   0.12938995022840247,
+   1.0
+  ],
+  "near_tie_quantile": 0.98,
+  "near_tie_sets": [
+   {
+    "identity_ids": [
+     "syn-id-0011",
+     "syn-id-0026"
+    ],
+    "pairs": [
+     [
+      10,
+      25
+     ]
+    ],
+    "cosines": [
+     0.18960622717905842
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0009",
+     "syn-id-0024"
+    ],
+    "pairs": [
+     [
+      8,
+      23
+     ]
+    ],
+    "cosines": [
+     0.16132715110227266
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0017",
+     "syn-id-0028"
+    ],
+    "pairs": [
+     [
+      16,
+      27
+     ]
+    ],
+    "cosines": [
+     0.15793572169569964
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0015",
+     "syn-id-0019"
+    ],
+    "pairs": [
+     [
+      14,
+      18
+     ]
+    ],
+    "cosines": [
+     0.13785693754907946
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0002",
+     "syn-id-0027"
+    ],
+    "pairs": [
+     [
+      1,
+      26
+     ]
+    ],
+    "cosines": [
+     0.13565393165685788
+    ]
+   }
+  ],
+  "run_stamp": "20261006T225702Z",
+  "created_utc": "2026-10-06T22:57:02+00:00"
+ },
+ "ablation": {
+  "k": 5,
+  "n_query_items": 60,
+  "n_skipped": 0,
+  "face_only": {
+   "overall": {
+    "n_queries": 60,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   },
+   "per_set": {
+    "syn-id-0002|syn-id-0027": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0009|syn-id-0024": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0011|syn-id-0026": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0015|syn-id-0019": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0017|syn-id-0028": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    }
+   }
+  },
+  "fused": {
+   "overall": {
+    "n_queries": 60,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   },
+   "per_set": {
+    "syn-id-0002|syn-id-0027": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0009|syn-id-0024": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0011|syn-id-0026": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0015|syn-id-0019": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0017|syn-id-0028": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    }
+   }
+  },
+  "face_score_gap": {
+   "overall": {
+    "n": 60,
+    "mean": 0.7482661530564776,
+    "median": 0.8394736060731187
+   },
+   "near_tie": {
+    "n": 20,
+    "mean": 0.6905785220937737,
+    "median": 0.8103937728209417
+   }
+  }
+ },
+ "context_noise_sweep": {
+  "seed": 42,
+  "noise_kinds": [
+   "replace",
+   "drop"
+  ],
+  "face_only": {
+   "overall": {
+    "n_queries": 60,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+   }
+  },
+  "rows": [
+   {
+    "noise_rate": 0.0,
+    "n_corrupted": 0,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.1,
+    "n_corrupted": 2,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.2,
+    "n_corrupted": 11,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.3,
+    "n_corrupted": 16,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.4,
+    "n_corrupted": 21,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.5,
+    "n_corrupted": 24,
+    "fused": {
+     "overall": {
+      "n_queries": 60,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 1.0,
+      "hit_at_k": 1.0,
+      "mrr": 1.0
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   }
+  ],
+  "first_negative_delta_rate": {
+   "overall": null,
+   "near_tie": null
+  }
+ },
+ "context_weight_sweep": null
+}

@@ -1,0 +1,970 @@
+{
+ "config": {
+  "data_root": "multi_image_gallery",
+  "limit": 2,
+  "max_identities": 200,
+  "seed": 42,
+  "k": 5,
+  "profile": {
+   "name": "strict_surveillance",
+   "alpha": 0.7,
+   "beta": 0.3,
+   "ambiguous_low": 0.65,
+   "ambiguous_high": 0.75
+  },
+  "scenario_config_path": "configs/scenario_v0.yaml",
+  "scenario_config_hash": "1a670f9ba8dcbfda782cf3b45de8144a99f95c4a003f9b4dc16c7676bfa00e49",
+  "scenario_config": {
+   "n_identities": 60,
+   "n_geo_clusters": 5,
+   "n_periods": 4,
+   "media_per_identity": 2,
+   "context_noise_rate": 0.15,
+   "context_absent_rate": 0.2,
+   "geo_drift_rate": 0.2,
+   "clean_media_rate": 0.15,
+   "timestamp_jitter_days": 3.0,
+   "near_tie_band": [
+    0.65,
+    0.75
+   ],
+   "max_near_tie_sets": 10,
+   "seed": 42,
+   "templates": {
+    "geo_clusters": [
+     "geo-alpha",
+     "geo-beta",
+     "geo-gamma",
+     "geo-delta",
+     "geo-epsilon"
+    ],
+    "platforms": [
+     "platform-a",
+     "platform-b",
+     "platform-c",
+     "platform-d",
+     "platform-e"
+    ],
+    "archetypes": [
+     "maritime-logistics-figure",
+     "orbital-freight-broker",
+     "glacier-research-liaison",
+     "desert-solar-auditor",
+     "island-telecom-archivist",
+     "river-barge-coordinator",
+     "tundra-mapping-enthusiast",
+     "fictional-conference-circuit-speaker"
+    ],
+    "alias_templates": [
+     "alias-one",
+     "alias-two",
+     "alias-three",
+     "alias-four",
+     "alias-five"
+    ],
+    "entity_templates": [
+     "entity-ember",
+     "entity-harbor",
+     "entity-quartz",
+     "entity-lantern",
+     "entity-cascade"
+    ],
+    "degradation_types": [
+     "gaussian_blur",
+     "brightness",
+     "downsample",
+     "off_angle"
+    ]
+   }
+  },
+  "query_degradation": [
+   "downsample",
+   0.25
+  ],
+  "gap_thresholds": [
+   0.05,
+   0.1,
+   0.2
+  ],
+  "selective_gap": 0.1,
+  "n_query_view_dropped": 0,
+  "noise_rates": [
+   0.0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5
+  ],
+  "weight_ratios": null,
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "n_images": 263,
+  "n_identities": 200,
+  "n_items": 120,
+  "n_items_dropped": 0,
+  "n_embed_dropped": 1,
+  "near_tie_band": [
+   0.1276401514608271,
+   1.0
+  ],
+  "near_tie_quantile": 0.98,
+  "near_tie_sets": [
+   {
+    "identity_ids": [
+     "syn-id-0030",
+     "syn-id-0055"
+    ],
+    "pairs": [
+     [
+      29,
+      54
+     ]
+    ],
+    "cosines": [
+     0.24170276863223283
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0035",
+     "syn-id-0048"
+    ],
+    "pairs": [
+     [
+      34,
+      47
+     ]
+    ],
+    "cosines": [
+     0.21895171086183782
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0017",
+     "syn-id-0032",
+     "syn-id-0051"
+    ],
+    "pairs": [
+     [
+      16,
+      31
+     ],
+     [
+      16,
+      50
+     ],
+     [
+      31,
+      50
+     ]
+    ],
+    "cosines": [
+     0.16693993642845778,
+     0.19924803774571803,
+     0.15807345537799267
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0011",
+     "syn-id-0026"
+    ],
+    "pairs": [
+     [
+      10,
+      25
+     ]
+    ],
+    "cosines": [
+     0.18960622717905842
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0004",
+     "syn-id-0036"
+    ],
+    "pairs": [
+     [
+      3,
+      35
+     ]
+    ],
+    "cosines": [
+     0.17751067870913678
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0001",
+     "syn-id-0060"
+    ],
+    "pairs": [
+     [
+      0,
+      59
+     ]
+    ],
+    "cosines": [
+     0.16913843283324442
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0006",
+     "syn-id-0054"
+    ],
+    "pairs": [
+     [
+      5,
+      53
+     ]
+    ],
+    "cosines": [
+     0.16403813474531662
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0040",
+     "syn-id-0046"
+    ],
+    "pairs": [
+     [
+      39,
+      45
+     ]
+    ],
+    "cosines": [
+     0.16288075418193187
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0009",
+     "syn-id-0024"
+    ],
+    "pairs": [
+     [
+      8,
+      23
+     ]
+    ],
+    "cosines": [
+     0.16132715110227266
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0022",
+     "syn-id-0044"
+    ],
+    "pairs": [
+     [
+      21,
+      43
+     ]
+    ],
+    "cosines": [
+     0.15876370134144946
+    ]
+   }
+  ],
+  "run_stamp": "20261007T113329Z",
+  "created_utc": "2026-10-07T11:41:59+00:00"
+ },
+ "ablation": {
+  "k": 5,
+  "n_query_items": 120,
+  "n_skipped": 0,
+  "selective_gap": 0.1,
+  "face_only": {
+   "overall": {
+    "n_queries": 120,
+    "hit_at_1": 0.9833333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.9916666666666667
+   },
+   "near_tie": {
+    "n_queries": 42,
+    "hit_at_1": 0.9523809523809523,
+    "hit_at_k": 1.0,
+    "mrr": 0.9761904761904762
+   },
+   "per_set": {
+    "syn-id-0001|syn-id-0060": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0004|syn-id-0036": {
+     "n_queries": 4,
+     "hit_at_1": 0.5,
+     "hit_at_k": 1.0,
+     "mrr": 0.75
+    },
+    "syn-id-0006|syn-id-0054": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0009|syn-id-0024": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0011|syn-id-0026": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0017|syn-id-0032|syn-id-0051": {
+     "n_queries": 6,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0022|syn-id-0044": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0030|syn-id-0055": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0035|syn-id-0048": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0040|syn-id-0046": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    }
+   }
+  },
+  "fused": {
+   "overall": {
+    "n_queries": 120,
+    "hit_at_1": 0.9833333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.9916666666666667
+   },
+   "near_tie": {
+    "n_queries": 42,
+    "hit_at_1": 0.9523809523809523,
+    "hit_at_k": 1.0,
+    "mrr": 0.9761904761904762
+   },
+   "per_set": {
+    "syn-id-0001|syn-id-0060": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0004|syn-id-0036": {
+     "n_queries": 4,
+     "hit_at_1": 0.5,
+     "hit_at_k": 1.0,
+     "mrr": 0.75
+    },
+    "syn-id-0006|syn-id-0054": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0009|syn-id-0024": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0011|syn-id-0026": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0017|syn-id-0032|syn-id-0051": {
+     "n_queries": 6,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0022|syn-id-0044": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0030|syn-id-0055": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0035|syn-id-0048": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0040|syn-id-0046": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    }
+   }
+  },
+  "selective": {
+   "overall": {
+    "n_queries": 120,
+    "hit_at_1": 0.9833333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.9916666666666667
+   },
+   "near_tie": {
+    "n_queries": 42,
+    "hit_at_1": 0.9523809523809523,
+    "hit_at_k": 1.0,
+    "mrr": 0.9761904761904762
+   },
+   "per_set": {
+    "syn-id-0001|syn-id-0060": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0004|syn-id-0036": {
+     "n_queries": 4,
+     "hit_at_1": 0.5,
+     "hit_at_k": 1.0,
+     "mrr": 0.75
+    },
+    "syn-id-0006|syn-id-0054": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0009|syn-id-0024": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0011|syn-id-0026": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0017|syn-id-0032|syn-id-0051": {
+     "n_queries": 6,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0022|syn-id-0044": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0030|syn-id-0055": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0035|syn-id-0048": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    },
+    "syn-id-0040|syn-id-0046": {
+     "n_queries": 4,
+     "hit_at_1": 1.0,
+     "hit_at_k": 1.0,
+     "mrr": 1.0
+    }
+   }
+  },
+  "selective_delta": {
+   "overall": {
+    "hit_at_1": 0.0,
+    "hit_at_k": 0.0,
+    "mrr": 0.0
+   },
+   "near_tie": {
+    "hit_at_1": 0.0,
+    "hit_at_k": 0.0,
+    "mrr": 0.0
+   }
+  },
+  "gap_le": {
+   "0.05": {
+    "gap_max": 0.05,
+    "n_queries": 2,
+    "face_only": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "fused": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "delta": {
+     "hit_at_1": 0.0,
+     "hit_at_k": 0.0,
+     "mrr": 0.0
+    }
+   },
+   "0.1": {
+    "gap_max": 0.1,
+    "n_queries": 2,
+    "face_only": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "fused": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "delta": {
+     "hit_at_1": 0.0,
+     "hit_at_k": 0.0,
+     "mrr": 0.0
+    }
+   },
+   "0.2": {
+    "gap_max": 0.2,
+    "n_queries": 2,
+    "face_only": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "fused": {
+     "n_queries": 2,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "delta": {
+     "hit_at_1": 0.0,
+     "hit_at_k": 0.0,
+     "mrr": 0.0
+    }
+   }
+  },
+  "face_score_gap": {
+   "overall": {
+    "n": 120,
+    "mean": 0.5965094741840777,
+    "median": 0.6540557230402542
+   },
+   "near_tie": {
+    "n": 42,
+    "mean": 0.5917902173843863,
+    "median": 0.6403873166270503
+   }
+  }
+ },
+ "context_noise_sweep": {
+  "seed": 42,
+  "noise_kinds": [
+   "replace",
+   "drop"
+  ],
+  "selective_gap": 0.1,
+  "face_only": {
+   "overall": {
+    "n_queries": 120,
+    "hit_at_1": 0.9833333333333333,
+    "hit_at_k": 1.0,
+    "mrr": 0.9916666666666667
+   },
+   "near_tie": {
+    "n_queries": 42,
+    "hit_at_1": 0.9523809523809523,
+    "hit_at_k": 1.0,
+    "mrr": 0.9761904761904762
+   }
+  },
+  "rows": [
+   {
+    "noise_rate": 0.0,
+    "n_corrupted": 0,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.1,
+    "n_corrupted": 8,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.2,
+    "n_corrupted": 20,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.3,
+    "n_corrupted": 34,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.4,
+    "n_corrupted": 44,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.5,
+    "n_corrupted": 55,
+    "fused": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    },
+    "selective": {
+     "overall": {
+      "n_queries": 120,
+      "hit_at_1": 0.9833333333333333,
+      "hit_at_k": 1.0,
+      "mrr": 0.9916666666666667
+     },
+     "near_tie": {
+      "n_queries": 42,
+      "hit_at_1": 0.9523809523809523,
+      "hit_at_k": 1.0,
+      "mrr": 0.9761904761904762
+     }
+    },
+    "selective_delta": {
+     "overall": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   }
+  ],
+  "first_negative_delta_rate": {
+   "overall": null,
+   "near_tie": null
+  },
+  "selective_first_negative_delta_rate": {
+   "overall": null,
+   "near_tie": null
+  }
+ },
+ "context_weight_sweep": null
+}

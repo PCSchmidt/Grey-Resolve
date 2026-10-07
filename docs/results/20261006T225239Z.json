@@ -1,0 +1,498 @@
+{
+ "config": {
+  "data_root": "gr_bench_data",
+  "limit": null,
+  "max_identities": null,
+  "seed": 42,
+  "k": 5,
+  "profile": {
+   "name": "strict_surveillance",
+   "alpha": 0.7,
+   "beta": 0.3,
+   "ambiguous_low": 0.65,
+   "ambiguous_high": 0.75
+  },
+  "scenario_config_path": "configs/scenario_v0.yaml",
+  "scenario_config_hash": "44d655bdbc723dcace5073d1d21ceda6f9b62a0394f0f3e34d7d75fc1de3485c",
+  "scenario_config": {
+   "n_identities": 20,
+   "n_geo_clusters": 5,
+   "n_periods": 4,
+   "media_per_identity": 2,
+   "context_noise_rate": 0.15,
+   "context_absent_rate": 0.2,
+   "geo_drift_rate": 0.2,
+   "clean_media_rate": 0.15,
+   "timestamp_jitter_days": 3.0,
+   "near_tie_band": [
+    0.65,
+    0.75
+   ],
+   "max_near_tie_sets": 10,
+   "seed": 42,
+   "templates": {
+    "geo_clusters": [
+     "geo-alpha",
+     "geo-beta",
+     "geo-gamma",
+     "geo-delta",
+     "geo-epsilon"
+    ],
+    "platforms": [
+     "platform-a",
+     "platform-b",
+     "platform-c",
+     "platform-d",
+     "platform-e"
+    ],
+    "archetypes": [
+     "maritime-logistics-figure",
+     "orbital-freight-broker",
+     "glacier-research-liaison",
+     "desert-solar-auditor",
+     "island-telecom-archivist",
+     "river-barge-coordinator",
+     "tundra-mapping-enthusiast",
+     "fictional-conference-circuit-speaker"
+    ],
+    "alias_templates": [
+     "alias-one",
+     "alias-two",
+     "alias-three",
+     "alias-four",
+     "alias-five"
+    ],
+    "entity_templates": [
+     "entity-ember",
+     "entity-harbor",
+     "entity-quartz",
+     "entity-lantern",
+     "entity-cascade"
+    ],
+    "degradation_types": [
+     "gaussian_blur",
+     "brightness",
+     "downsample",
+     "off_angle"
+    ]
+   }
+  },
+  "noise_rates": [
+   0.0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5
+  ],
+  "weight_ratios": null,
+  "det_model": "det_10g.onnx",
+  "rec_model": "w600k_r50.onnx",
+  "n_images": 50,
+  "n_identities": 10,
+  "n_items": 40,
+  "n_items_dropped": 0,
+  "n_embed_dropped": 0,
+  "near_tie_band": [
+   0.999999999,
+   1.0
+  ],
+  "near_tie_quantile": 0.98,
+  "near_tie_sets": [
+   {
+    "identity_ids": [
+     "syn-id-0002",
+     "syn-id-0012"
+    ],
+    "pairs": [
+     [
+      1,
+      11
+     ]
+    ],
+    "cosines": [
+     1.0
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0006",
+     "syn-id-0016"
+    ],
+    "pairs": [
+     [
+      5,
+      15
+     ]
+    ],
+    "cosines": [
+     1.0
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0009",
+     "syn-id-0019"
+    ],
+    "pairs": [
+     [
+      8,
+      18
+     ]
+    ],
+    "cosines": [
+     1.0
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0010",
+     "syn-id-0020"
+    ],
+    "pairs": [
+     [
+      9,
+      19
+     ]
+    ],
+    "cosines": [
+     1.0
+    ]
+   },
+   {
+    "identity_ids": [
+     "syn-id-0008",
+     "syn-id-0018"
+    ],
+    "pairs": [
+     [
+      7,
+      17
+     ]
+    ],
+    "cosines": [
+     0.9999999999999997
+    ]
+   }
+  ],
+  "run_stamp": "20261006T225239Z",
+  "created_utc": "2026-10-06T22:52:39+00:00"
+ },
+ "ablation": {
+  "k": 5,
+  "n_query_items": 40,
+  "n_skipped": 0,
+  "face_only": {
+   "overall": {
+    "n_queries": 40,
+    "hit_at_1": 0.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.5
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 0.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.5
+   },
+   "per_set": {
+    "syn-id-0002|syn-id-0012": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0006|syn-id-0016": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0008|syn-id-0018": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0009|syn-id-0019": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0010|syn-id-0020": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    }
+   }
+  },
+  "fused": {
+   "overall": {
+    "n_queries": 40,
+    "hit_at_1": 0.075,
+    "hit_at_k": 1.0,
+    "mrr": 0.5375
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 0.05,
+    "hit_at_k": 1.0,
+    "mrr": 0.525
+   },
+   "per_set": {
+    "syn-id-0002|syn-id-0012": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0006|syn-id-0016": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0008|syn-id-0018": {
+     "n_queries": 4,
+     "hit_at_1": 0.25,
+     "hit_at_k": 1.0,
+     "mrr": 0.625
+    },
+    "syn-id-0009|syn-id-0019": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    },
+    "syn-id-0010|syn-id-0020": {
+     "n_queries": 4,
+     "hit_at_1": 0.0,
+     "hit_at_k": 1.0,
+     "mrr": 0.5
+    }
+   }
+  },
+  "face_score_gap": {
+   "overall": {
+    "n": 40,
+    "mean": 0.3691750634997573,
+    "median": 0.3677588520578836
+   },
+   "near_tie": {
+    "n": 20,
+    "mean": 0.36497526994274787,
+    "median": 0.35992579615690345
+   }
+  }
+ },
+ "context_noise_sweep": {
+  "seed": 42,
+  "noise_kinds": [
+   "replace",
+   "drop"
+  ],
+  "face_only": {
+   "overall": {
+    "n_queries": 40,
+    "hit_at_1": 0.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.5
+   },
+   "near_tie": {
+    "n_queries": 20,
+    "hit_at_1": 0.0,
+    "hit_at_k": 1.0,
+    "mrr": 0.5
+   }
+  },
+  "rows": [
+   {
+    "noise_rate": 0.0,
+    "n_corrupted": 0,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.075,
+      "hit_at_k": 1.0,
+      "mrr": 0.5375
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.075,
+      "hit_at_k": 0.0,
+      "mrr": 0.03749999999999998
+     },
+     "near_tie": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     }
+    }
+   },
+   {
+    "noise_rate": 0.1,
+    "n_corrupted": 1,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.075,
+      "hit_at_k": 1.0,
+      "mrr": 0.5375
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.075,
+      "hit_at_k": 0.0,
+      "mrr": 0.03749999999999998
+     },
+     "near_tie": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     }
+    }
+   },
+   {
+    "noise_rate": 0.2,
+    "n_corrupted": 9,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.075,
+      "hit_at_k": 1.0,
+      "mrr": 0.5375
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.075,
+      "hit_at_k": 0.0,
+      "mrr": 0.03749999999999998
+     },
+     "near_tie": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     }
+    }
+   },
+   {
+    "noise_rate": 0.3,
+    "n_corrupted": 11,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.075,
+      "hit_at_k": 1.0,
+      "mrr": 0.5375
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.075,
+      "hit_at_k": 0.0,
+      "mrr": 0.03749999999999998
+     },
+     "near_tie": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     }
+    }
+   },
+   {
+    "noise_rate": 0.4,
+    "n_corrupted": 15,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.0,
+      "hit_at_k": 1.0,
+      "mrr": 0.5
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     },
+     "near_tie": {
+      "hit_at_1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0
+     }
+    }
+   },
+   {
+    "noise_rate": 0.5,
+    "n_corrupted": 18,
+    "fused": {
+     "overall": {
+      "n_queries": 40,
+      "hit_at_1": 0.075,
+      "hit_at_k": 1.0,
+      "mrr": 0.5375
+     },
+     "near_tie": {
+      "n_queries": 20,
+      "hit_at_1": 0.05,
+      "hit_at_k": 1.0,
+      "mrr": 0.525
+     }
+    },
+    "delta": {
+     "overall": {
+      "hit_at_1": 0.075,
+      "hit_at_k": 0.0,
+      "mrr": 0.03749999999999998
+     },
+     "near_tie": {
+      "hit_at_1": 0.05,
+      "hit_at_k": 0.0,
+      "mrr": 0.025000000000000022
+     }
+    }
+   }
+  ],
+  "first_negative_delta_rate": {
+   "overall": null,
+   "near_tie": null
+  }
+ },
+ "context_weight_sweep": null
+}
