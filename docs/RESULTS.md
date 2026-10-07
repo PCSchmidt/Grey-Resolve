@@ -92,3 +92,41 @@ hard, near-tie comparisons; that is the Phase 2 synthetic-scenario near-tie eval
 - Heuristic FIQA-lite gate, not measured FIQA (MagFace assessor is planned).
 - All data is LFW-derived research data; nothing here transfers to real-world operational
   accuracy claims.
+
+---
+
+# Phase 2 — Fusion Ablation (first evidence run, 2026-10-06)
+
+Run `benchmarks/out/20261006T225702Z`. 100 real identities (LFW-derived local gallery,
+2 images each), 30 synthetic personas with disjoint source images, 60 fabricated media
+items, adaptive near-tie band [0.129, 1.0] at the 98th cross-persona-cosine quantile
+(5 near-tie sets). Profile `strict_surveillance` (alpha=0.7, beta=0.3). Persona-level
+ranking (candidates = personas; face score = max over the persona's non-query items).
+
+| Scope | Face-only hit@1 | Fused hit@1 | Δ | MRR (face → fused) |
+|---|---|---|---|---|
+| overall (60 queries) | 1.000 | 1.000 | +0.000 | 1.000 → 1.000 |
+| near-tie (20 queries) | 1.000 | 1.000 | +0.000 | 1.000 → 1.000 |
+
+Context-noise sweep (rates 0.0–0.5): fused hit@1 stays 1.000, delta +0.000 at every rate.
+
+**Finding 6 — Negative result: context fusion adds nothing on clean face evidence.**
+Face-only resolves every query, so there is nothing for context to break. The diagnostic
+explains why: "near-tie" sets were selected by persona-mean cosine, but at query time the
+true persona's face-score gap is large (mean 0.69, median 0.81 over the near-tie queries).
+These are not actual ties when the query image is a clean photo. Per the scenario spec,
+this negative region is reported plainly rather than suppressed.
+
+**Interpretation — the fusion hypothesis is untested, not falsified.** The ambiguity
+regime never materialized on clean queries. Phase 1 shows where it lives: under
+degradation, face evidence genuinely degrades (downsample ×0.1 → FMR@FNMR=1% = 0.873;
+blur σ=8 → 0.547). The ablation must run with (a) degraded query images — the scenario
+records already carry degradation descriptors — and (b) query-time tie selection
+(queries whose top-2 face-score gap is small), not just persona-mean near-ties.
+
+**Tooling findings from this run.** (i) The planning-doc near-tie band (0.65–0.75 cosine)
+is empty for ArcFace — cross-persona cosines on this data top out near 0.16; the band is
+now resolved adaptively at the 98th quantile of measured cross-persona cosines.
+(ii) If synthetic personas share source images, "ties" are duplicate-photo artifacts
+(cosine exactly 1.0) and the face-only baseline always loses them; the CLI now warns and
+the evidence run uses disjoint source images per persona.
