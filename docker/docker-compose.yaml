@@ -1,0 +1,39 @@
+# Grey-Resolve Phase 3 deployment: inference API + Qdrant.
+# Build context is the repo root so the Dockerfile can copy the project source.
+services:
+  grey-resolve-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Set to "qdrant" to back the vector index with the qdrant service below
+      # instead of in-process FAISS (QdrantVectorIndex via GREY_RESOLVE_QDRANT_URL).
+      GREY_RESOLVE_INDEX: "faiss"
+      GREY_RESOLVE_PROFILE: "broad_lead"
+      GREY_RESOLVE_STORAGE: "/data"
+      GREY_RESOLVE_INSIGHTFACE_ROOT: "/home/app/.insightface"
+      GREY_RESOLVE_QDRANT_URL: "http://qdrant:6333"
+    volumes:
+      # Backbone weights (non-commercial; never baked into the image).
+      # Adjust the host side to your ~/.insightface path if $HOME differs.
+      - "${HOME}/.insightface:/home/app/.insightface:ro"
+      # Storage: FAISS snapshot + SQLite metadata sidecar.
+      - "grey-resolve-storage:/data"
+    depends_on:
+      - qdrant
+
+  # Qdrant vector database. QdrantVectorIndex can be wired via env
+  # GREY_RESOLVE_INDEX=qdrant: docker/serve.py then points the vector index at
+  # this service instead of in-process FAISS (metadata stays in SQLite for now).
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"
+    volumes:
+      - "qdrant-storage:/qdrant/storage"
+
+volumes:
+  grey-resolve-storage:
+  qdrant-storage:
