@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Grey-Resolve resolution console -- synthetic demo of degraded-media entity resolution. Research prototype; fabricated data.">
+<title>Grey-Resolve // Resolution Console</title>
+<link rel="stylesheet" href="demo/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+
+  <!-- Persistent disclaimer banner: not dismissible, always visible. -->
+  <div id="banner">SYNTHETIC DEMO -- RESEARCH PROTOTYPE. Fabricated data; candidate ranking, never identification.</div>
+
+  <!-- Corner HUD clusters: branding (left) + honest synthetic telemetry (right). -->
+  <header class="hud">
+    <div id="hud-topleft" class="hud-cluster">
+      <div class="hud-brand glow">GREY-RESOLVE // RESOLUTION CONSOLE</div>
+      <div class="hud-sub">degraded-media entity resolution &mdash; gods-eye manifold view</div>
+    </div>
+    <div id="hud-topright" class="hud-cluster">
+      <div class="telemetry-row">
+        <span><span class="key">RUN-ID</span> <span class="value" data-tel="run">&mdash;</span></span>
+        <span><span class="key">UTC</span> <span class="value" data-tel="clock">&mdash;</span></span>
+        <span><span class="key">FPS</span> <span class="value" data-tel="fps">&mdash;</span></span>
+      </div>
+      <div class="hud-sub">
+        <span class="badge-trust-low blink">SYNTHETIC</span>
+        &nbsp;local session &mdash; ephemeral run-id, no telemetry leaves this page
+      </div>
+    </div>
+  </header>
+
+  <!-- Rails: feed (left) | manifold viewport (center) | resolver (right). -->
+  <main id="stage">
+    <aside id="feed" class="panel" aria-label="contact feed">
+      <!-- populated at runtime by panels.js -->
+    </aside>
+
+    <section id="viewport" aria-label="3D manifold viewport">
+      <div class="viewport-tag tl">MANIFOLD // CLUSTER SPACE</div>
+      <div class="viewport-tag tr" data-tel="viewport-mode">MODE: STANDBY</div>
+      <div class="viewport-tag bl">CLICK A CLUSTER TO SELECT &mdash; DRAG TO ORBIT</div>
+      <div class="viewport-tag br">FOG 0.028 // ADDITIVE PASS</div>
+    </section>
+
+    <aside id="resolver" class="panel" aria-label="candidate resolver">
+      <!-- populated at runtime by panels.js -->
+    </aside>
+  </main>
+
+  <!-- Bottom bar: degradation lab (bottom-left) + ticker (fills). -->
+  <footer id="bottom">
+    <section id="degrade-panel" class="panel" aria-label="degradation lab">
+      <!-- populated at runtime by degrade.js (canvas + mode controls) -->
+    </section>
+    <section id="ticker" class="panel" aria-label="event ticker">
+      <!-- populated at runtime by panels.js -->
+    </section>
+  </footer>
+
+  <!-- Boot sequence overlay: typed init lines, fades after ~2.5s (main.js). -->
+  <div id="boot" role="status" aria-label="console boot sequence">
+    <div class="boot-line" data-text="GREY-RESOLVE CONSOLE 0.4.3 // synthetic build (research prototype)"></div>
+    <div class="boot-line" data-text="init bus ................. ok  [pub/sub, 4 channels]"></div>
+    <div class="boot-line" data-text="load persona manifold ... ok  [12 constellations, fabricated]"></div>
+    <div class="boot-line" data-text="mount degrade engine .... ok  [sensor degradation lab]"></div>
+    <div class="boot-line" data-text="telemetry link ........... SYNTHETIC  [local only, ephemeral run-id]"></div>
+    <div class="boot-line" data-text="policy ................... CANDIDATE RANKING ONLY -- NEVER IDENTIFICATION"></div>
+    <div class="boot-line" data-text="console ready."></div>
+    <div class="boot-skip">click or press any key to skip</div>
+  </div>
+
+  <!-- CRT scanline + vignette overlay. -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Module load order is part of the shared contract:
+       data.js -> panels.js -> degrade.js -> manifold.js -> main.js -->
+  <script type="module" src="demo/data.js"></script>
+  <script type="module" src="demo/panels.js"></script>
+  <script type="module" src="demo/degrade.js"></script>
+  <script type="module" src="demo/manifold.js"></script>
+  <script type="module" src="demo/main.js"></script>
+
+</body>
+</html>
