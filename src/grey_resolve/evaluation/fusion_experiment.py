@@ -128,14 +128,21 @@ class RankingItem:
         item_id: unique id (e.g. the scenario ``media_id``).
         persona_id: the item's persona label (the resolution target).
         embedding: 1-D face embedding (any finite non-zero vector; cosine is
-            computed internally after normalization).
+            computed internally after normalization). This is the item's
+            *gallery* view (clean evidence).
         context: the item's ContextMetadata (may be empty).
+        query_embedding: optional *query* view of the same face as observed
+            (e.g. embedded from a degraded photo). When set, queries score
+            against candidate galleries with this vector while the item's own
+            gallery evidence stays clean -- this is how the degraded-query
+            ablation compresses face scores into the ambiguous regime.
     """
 
     item_id: str
     persona_id: str
     embedding: np.ndarray
     context: ContextMetadata = field(default_factory=ContextMetadata)
+    query_embedding: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -146,6 +153,7 @@ class _Item:
     persona_id: str
     unit: np.ndarray
     context: ContextMetadata
+    query_unit: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -201,7 +209,20 @@ def _validate_items(items: Sequence[RankingItem]) -> tuple[_Item, ...]:
             raise ValueError(
                 f"items[{idx}].embedding has dimension {vec.size}, expected {dim}"
             )
-        out.append(_Item(it.item_id, it.persona_id, vec / norm, it.context))
+        query_unit: np.ndarray | None = None
+        if it.query_embedding is not None:
+            qvec = np.asarray(it.query_embedding, dtype=np.float64)
+            if qvec.ndim != 1 or qvec.size != vec.size:
+                raise ValueError(
+                    f"items[{idx}].query_embedding must be a 1-D vector of dim {vec.size}"
+                )
+            if not np.all(np.isfinite(qvec)):
+                raise ValueError(f"items[{idx}].query_embedding must be finite")
+            qnorm = float(np.linalg.norm(qvec))
+            if qnorm == 0.0:
+                raise ValueError(f"items[{idx}].query_embedding must not be a zero vector")
+            query_unit = qvec / qnorm
+        out.append(_Item(it.item_id, it.persona_id, vec / norm, it.context, query_unit))
     if len({it.persona_id for it in out}) < 2:
         raise ValueError("items must span at least 2 personas")
     out.sort(key=lambda it: it.item_id)
@@ -265,6 +286,17 @@ def _checked_k(k: int) -> int:
 # -------------------------------------------------------------------------- evidence
 
 
+def _checked_gap_thresholds(thresholds: Sequence[float]) -> tuple[float, ...]:
+    """Validate gap cutoffs: finite, >= 0, ascending-unique order preserved."""
+    out: list[float] = []
+    for t in thresholds:
+        ft = float(t)
+        if not np.isfinite(ft) or ft < 0:
+            raise ValueError("gap_thresholds must be finite and >= 0")
+        out.append(ft)
+    return tuple(out)
+
+
 def _prepare(
     items: Sequence[RankingItem],
     near_tie_sets: Sequence[NearTieSet],
@@ -304,6 +336,7 @@ def _prepare(
             scope, set_key = "near_tie", "|".join(sorted(set(s.identity_ids)))
         else:
             candidates, scope, set_key = all_personas, "overall", None
+        qvec = q.query_unit if q.query_unit is not None else q.unit
         face_scores: list[float] = []
         persona_contexts: list[ContextMetadata] = []
         for c in candidates:
@@ -313,7 +346,7 @@ def _prepare(
             for g in by_persona[c]:
                 if g.item_id == q.item_id:
                     continue
-                score = float(np.dot(q.unit, g.unit))
+                score = float(np.dot(qvec, g.unit))
                 if first or score > best_score:  # ties keep the smallest item_id
                     best_score, best_ctx, first = score, g.context, False
             face_scores.append(float(best_score))
@@ -394,6 +427,12 @@ def _method_block(
     return block
 
 
+def _face_gap(ev: _QueryEvidence) -> float | None:
+    """Top-1 vs top-2 face-score gap for one query (None with <2 candidates)."""
+    ranked = sorted(ev.face_scores, reverse=True)
+    return float(ranked[0] - ranked[1]) if len(ranked) >= 2 else None
+
+
 def _gap_summary(evidence: Sequence[_QueryEvidence]) -> dict[str, Any]:
     """Mean/median face-score gap between the top-1 and top-2 candidate personas."""
     gaps = []
@@ -453,6 +492,7 @@ def run_ambiguity_ablation(
     *,
     k: int = 5,
     query_ids: Sequence[str] | None = None,
+    gap_thresholds: Sequence[float] = (),
 ) -> dict[str, Any]:
     """Face-only vs fused persona ranking on near-tie ambiguity sets.
 
@@ -469,12 +509,18 @@ def run_ambiguity_ablation(
             then falls back to the all-personas candidate set).
         k: hit@k cutoff (integer >= 1).
         query_ids: optional query subset (default: every item).
+        gap_thresholds: optional face-gap cutoffs; for each threshold the
+            output includes metrics restricted to queries whose top-1 vs
+            top-2 face-score gap is <= the cutoff ("gap_le" block) -- the
+            actual-tie regime where fusion should matter.
 
     Returns:
         JSON-friendly dict with ``"k"``, ``"n_query_items"``, ``"n_skipped"``,
         ``"face_only"`` and ``"fused"`` blocks (``"overall"``, ``"near_tie"``,
         ``"per_set"`` each holding ``hit_at_1`` / ``hit_at_k`` / ``mrr`` /
-        ``n_queries``), and ``"face_score_gap"`` (mean/median top-1-vs-top-2
+        ``n_queries``), ``"gap_le"`` (one block per gap cutoff with
+        ``face_only`` / ``fused`` / ``delta`` metrics on the tight-gap
+        queries), and ``"face_score_gap"`` (mean/median top-1-vs-top-2
         face-score gap per scope). Empty scopes report ``None`` metrics with
         ``n_queries`` 0.
 
@@ -489,15 +535,41 @@ def run_ambiguity_ablation(
         getattr(scorer, "context_score", None)
     ):
         raise TypeError("scorer must provide fuse() and context_score()")
+    thresholds = _checked_gap_thresholds(gap_thresholds)
     evidence, n_skipped = _prepare(items, near_tie_sets, query_ids)
+    truths = [ev.query.persona_id for ev in evidence]
     face_ranked = [_rank_personas(ev, None, "face") for ev in evidence]
     fused_ranked = _score_fused(evidence, scorer, None)
+    gap_le: dict[str, Any] = {}
+    for t in thresholds:
+        idx = [
+            i
+            for i, ev in enumerate(evidence)
+            if (_gap := _face_gap(ev)) is not None and _gap <= t
+        ]
+        face_sub = _aggregate([face_ranked[i] for i in idx], [truths[i] for i in idx], kk)
+        fused_sub = _aggregate([fused_ranked[i] for i in idx], [truths[i] for i in idx], kk)
+        gap_le[f"{t:g}"] = {
+            "gap_max": float(t),
+            "n_queries": face_sub["n_queries"],
+            "face_only": face_sub,
+            "fused": fused_sub,
+            "delta": {
+                key: (
+                    None
+                    if fused_sub[key] is None or face_sub[key] is None
+                    else float(fused_sub[key] - face_sub[key])
+                )
+                for key in ("hit_at_1", "hit_at_k", "mrr")
+            },
+        }
     return {
         "k": kk,
         "n_query_items": len(evidence),
         "n_skipped": int(n_skipped),
         "face_only": _method_block(evidence, face_ranked, kk, include_per_set=True),
         "fused": _method_block(evidence, fused_ranked, kk, include_per_set=True),
+        "gap_le": gap_le,
         "face_score_gap": {
             "overall": _gap_summary(evidence),
             "near_tie": _gap_summary([ev for ev in evidence if ev.scope == "near_tie"]),

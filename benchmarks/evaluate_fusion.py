@@ -107,6 +107,21 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--n-identities", type=int, default=None, help="override scenario persona count")
     parser.add_argument(
+        "--query-degradation",
+        nargs=2,
+        default=None,
+        metavar=("NAME", "SEVERITY"),
+        help="degrade QUERY pixels with this operator/severity before embedding "
+        "(gallery evidence stays clean); the face-ambiguity regime for the fusion ablation",
+    )
+    parser.add_argument(
+        "--gap-thresholds",
+        type=float,
+        nargs="+",
+        default=[0.05, 0.1, 0.2],
+        help="face-gap cutoffs for the tight-gap ('gap_le') ablation subsets",
+    )
+    parser.add_argument(
         "--media-per-identity",
         type=int,
         default=None,
@@ -316,17 +331,62 @@ def main(argv: Sequence[str] | None = None) -> int:
     write_scenario(out_dir / "scenario", identities, media, scenario_config, near_tie_sets=near_tie_sets)
     scenario = load_scenario(out_dir / "scenario")
 
+    query_by_index: dict[int, object] = {}
+    n_query_view_dropped = 0
+    query_degradation: tuple[str, float] | None = None
+    if args.query_degradation:
+        from grey_resolve.degradation.operators import DEGRADATIONS
+
+        op_name, sev_str = args.query_degradation
+        if op_name not in DEGRADATIONS:
+            raise SystemExit(
+                f"error: unknown degradation {op_name!r}; known: {sorted(DEGRADATIONS)}"
+            )
+        try:
+            severity = float(sev_str)
+        except ValueError as exc:
+            raise SystemExit(f"error: bad --query-degradation severity {sev_str!r}") from exc
+        op = DEGRADATIONS[op_name]
+        for idx, img in enumerate(images):
+            if idx not in emb_by_index:
+                continue
+            try:
+                degraded = op(img, severity)
+            except ValueError as exc:
+                raise SystemExit(f"error: {exc}") from exc
+            qv = embed_fn(degraded)
+            if qv is None:
+                n_query_view_dropped += 1
+            else:
+                query_by_index[idx] = qv
+        query_degradation = (op_name, severity)
+        print(
+            f"query view: {op_name} sev={severity:g} -- {len(query_by_index)} embedded, "
+            f"{n_query_view_dropped} detection failures (excluded from queries)"
+        )
+
     items: list[RankingItem] = []
+    query_ids: list[str] = []
     n_items_dropped = 0
     for m in scenario.media:
         if not m.image_ref.startswith("inline/"):
             n_items_dropped += 1
             continue
-        vec = emb_by_index.get(int(m.image_ref.split("/", 1)[1]))
+        idx = int(m.image_ref.split("/", 1)[1])
+        vec = emb_by_index.get(idx)
         if vec is None:
             n_items_dropped += 1
             continue
-        items.append(RankingItem(m.media_id, m.identity_id, vec, m.to_context()))
+        if query_degradation is None:
+            items.append(RankingItem(m.media_id, m.identity_id, vec, m.to_context()))
+            query_ids.append(m.media_id)
+        else:
+            qvec = query_by_index.get(idx)
+            items.append(
+                RankingItem(m.media_id, m.identity_id, vec, m.to_context(), query_embedding=qvec)
+            )
+            if qvec is not None:
+                query_ids.append(m.media_id)
     print(f"ranking pool: {len(items)} items ({n_items_dropped} without embeddings dropped)")
 
     try:
@@ -340,9 +400,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"fusion profile {profile.name}: alpha={profile.alpha} beta={profile.beta}")
 
     try:
-        ablation = run_ambiguity_ablation(items, scorer, near_tie_sets, k=args.k)
+        ablation = run_ambiguity_ablation(
+            items, scorer, near_tie_sets, k=args.k,
+            query_ids=query_ids, gap_thresholds=list(args.gap_thresholds),
+        )
         noise = run_context_noise_sweep(
-            items, scorer, near_tie_sets, list(args.noise_rates), seed=int(args.seed), k=args.k
+            items, scorer, near_tie_sets, list(args.noise_rates), seed=int(args.seed),
+            k=args.k, query_ids=query_ids,
         )
         weight_sweep = None
         if args.weight_ratios:
@@ -384,6 +448,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "scenario_config_path": str(args.scenario_config),
         "scenario_config_hash": config_hash(scenario_config),
         "scenario_config": scenario_config.to_dict(),
+        "query_degradation": (
+            [query_degradation[0], float(query_degradation[1])] if query_degradation else None
+        ),
+        "gap_thresholds": [float(t) for t in args.gap_thresholds],
+        "n_query_view_dropped": int(n_query_view_dropped),
         "noise_rates": [float(p) for p in args.noise_rates],
         "weight_ratios": [float(r) for r in args.weight_ratios] if args.weight_ratios else None,
         "det_model": str(det_model),
@@ -419,6 +488,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     ["ablation", method, scope, "", _fmt(m["hit_at_1"]), _fmt(m["hit_at_k"]),
                      _fmt(m["mrr"]), _fmt(m["n_queries"]), "", ""]
                 )
+        for t_key, block in ablation.get("gap_le", {}).items():
+            for method in ("face_only", "fused"):
+                m = block[method]
+                d = block["delta"] if method == "fused" else {"hit_at_1": "", "mrr": ""}
+                writer.writerow(
+                    ["gap_le", method, f"gap<={t_key}", "", _fmt(m["hit_at_1"]), _fmt(m["hit_at_k"]),
+                     _fmt(m["mrr"]), _fmt(m["n_queries"]),
+                     _fmt(d["hit_at_1"]) if method == "fused" else "",
+                     _fmt(d["mrr"]) if method == "fused" else ""]
+                )
         for row in noise["rows"]:
             for scope in ("overall", "near_tie"):
                 m = row["fused"][scope]
@@ -440,6 +519,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"  ablation {method:<9} {scope:<8} hit@1={m['hit_at_1']:.3f} "
                     f"hit@{ablation['k']}={m['hit_at_k']:.3f} mrr={m['mrr']:.3f} n={m['n_queries']}"
                 )
+    for t_key, block in ablation.get("gap_le", {}).items():
+        fo, fu, d = block["face_only"], block["fused"], block["delta"]
+        if block["n_queries"]:
+            print(
+                f"  gap<={t_key:<5} n={block['n_queries']:<4} face hit@1={fo['hit_at_1']:.3f} "
+                f"fused hit@1={fu['hit_at_1']:.3f} delta={d['hit_at_1']:+.3f} "
+                f"(mrr {fo['mrr']:.3f}->{fu['mrr']:.3f})"
+            )
+        else:
+            print(f"  gap<={t_key:<5} n=0")
     gap = ablation["face_score_gap"]["near_tie"]
     if gap["n"]:
         print(f"  near-tie face gap: mean={gap['mean']:.4f} median={gap['median']:.4f} (n={gap['n']})")

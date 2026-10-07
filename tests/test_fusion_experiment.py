@@ -403,3 +403,90 @@ def test_error_bad_k_and_scorer():
     not_an_item = [object()]
     with pytest.raises(TypeError):
         run_ambiguity_ablation(not_an_item, _scorer(), [])
+
+
+# ------------------------------------------------------- dual-view queries + gap subsets
+
+
+def test_query_embedding_drives_query_side_scores():
+    """A degraded query view that TIES face-only is resolved by context.
+
+    Hand-computed: the query view (1,0,0) is exactly equidistant from pz's
+    gallery (1,1,0)/r2 and pa's gallery (1,-1,0)/r2 (cosine 1/sqrt(2) each).
+    Tie-breaks favor "pa" (ascending id) so face-only hit@1 = 0. The query
+    context matches pz (geo-alpha) and not pa (geo-beta), so fused hit@1 = 1.
+    """
+    r2 = float(np.sqrt(2.0))
+    items = [
+        RankingItem(
+            "q", "pz", np.array([1.0, 1.0, 0.0]) / r2, ALPHA_CTX,
+            query_embedding=np.array([1.0, 0.0, 0.0]),
+        ),
+        RankingItem("z1", "pz", np.array([1.0, 1.0, 0.0]) / r2, ALPHA_CTX),
+        RankingItem("a1", "pa", np.array([1.0, -1.0, 0.0]) / r2, BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(
+        items, _scorer(), [NearTieSet(("pz", "pa"), (), ())],
+        query_ids=["q"], gap_thresholds=[0.05],
+    )
+    assert out["face_only"]["overall"]["hit_at_1"] == 0.0
+    assert out["fused"]["overall"]["hit_at_1"] == 1.0
+    assert out["face_score_gap"]["overall"]["mean"] == pytest.approx(0.0, abs=1e-9)
+    gap_block = out["gap_le"]["0.05"]
+    assert gap_block["n_queries"] == 1
+    assert gap_block["delta"]["hit_at_1"] == pytest.approx(1.0)
+
+
+def test_gap_thresholds_partition_queries_by_face_gap():
+    # qa: near-tie gap ~0.015; qb: clear-cut gap ~0.1
+    items = [
+        RankingItem("qa", "pa", np.array([1.0, 0.0]), ALPHA_CTX),
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("qb", "pa", np.array([0.0, 1.0]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(
+        items, _scorer(), [], query_ids=["qa", "qb"], gap_thresholds=[0.05, 0.5],
+    )
+    assert out["gap_le"]["0.05"]["n_queries"] == 1   # only qa (tight gap)
+    assert out["gap_le"]["0.5"]["n_queries"] == 2    # both
+    assert out["gap_le"]["0.05"]["face_only"]["hit_at_1"] is not None
+    empty = out["gap_le"]["0.05"]
+    assert empty["fused"]["n_queries"] == 1
+
+
+def test_gap_le_empty_subset_reports_none_metrics():
+    items = [
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(items, _scorer(), [], gap_thresholds=[0.0])
+    block = out["gap_le"]["0"]
+    assert block["n_queries"] == 0
+    assert block["face_only"]["hit_at_1"] is None
+    assert block["delta"]["hit_at_1"] is None
+
+
+def test_gap_thresholds_validation():
+    items = [
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    with pytest.raises(ValueError, match="gap_thresholds"):
+        run_ambiguity_ablation(items, _scorer(), [], gap_thresholds=[-0.5])
+    with pytest.raises(ValueError, match="gap_thresholds"):
+        run_ambiguity_ablation(items, _scorer(), [], gap_thresholds=[float("nan")])
+
+
+def test_query_embedding_validation_errors():
+    good = RankingItem("q", "pz", np.array([1.0, 0.0]), ALPHA_CTX)
+    bad = RankingItem(
+        "b", "pa", np.array([0.0, 1.0]), BETA_CTX, query_embedding=np.array([1.0, 0.0, 0.0])
+    )
+    with pytest.raises(ValueError, match="query_embedding"):
+        run_ambiguity_ablation([good, bad], _scorer(), [])
+    zero = RankingItem(
+        "z", "pa", np.array([0.0, 1.0]), BETA_CTX, query_embedding=np.zeros(2)
+    )
+    with pytest.raises(ValueError, match="query_embedding"):
+        run_ambiguity_ablation([good, zero], _scorer(), [])
