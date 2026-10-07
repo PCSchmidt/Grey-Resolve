@@ -151,21 +151,47 @@ MRR on the tightest slice: 0.559 → 0.760. Detection failures under ×0.1: 18/6
 and counted). Context-noise sweep (×0.1): fused delta vs face-only is −0.038 at noise 0.0
 and degrades to −0.115 at noise 0.4.
 
-**Finding 7 — Context fusion resolves exactly the ambiguous-tie regime, and costs
-accuracy elsewhere.** On genuinely ambiguous queries (face gap <= 0.05), fused ranking
-beats face-only by +0.25 hit@1 (n=4) and +0.11 at gap <= 0.1 (n=9); where face evidence
-is clear (gap > 0.2) fusion does nothing (Δ = 0.000); and applied indiscriminately it
-slightly *hurts* (overall Δ = −0.038), worsening as context noise rises. Mild degradation
-(downsample ×0.25, blur σ=3) never creates ambiguity at all (face gaps stay ~0.55-0.59,
-fusion inert) — consistent with Finding 4 that score compression, not ranking collapse,
-dominates until degradation is severe.
+**Finding 7 — Small-run positive, later overturned (kept for honesty).** On the small
+run, fusion beat face-only on tight-gap queries (gap <= 0.05: +0.25 hit@1 at n=4;
+gap <= 0.1: +0.11 at n=9) while slightly hurting overall (−0.038). That positive was a
+small-n fluke -- see Finding 8. The negative parts of Finding 7 did hold up: fusion is
+inert where face evidence is clear, and mild degradation (downsample ×0.25, blur σ=3)
+never creates ambiguity at all (face gaps ~0.55-0.59), consistent with Finding 4.
 
-**Design consequence — fusion must be selective.** The correct architecture is the one
-`ARCHITECTURE.md` sketched: fuse only inside the ambiguous band, rank by face outside it.
-A band-gated fusion scorer should capture the +0.25 without paying the −0.04. This is
-planned work, not yet implemented.
+**Design consequence — fusion must be selective.** Rank by face outside the ambiguous
+band, fuse inside it. Selective gap-gated fusion was implemented and tested
+(`--selective-gap`); its effectiveness depends entirely on fusion being net-positive in
+the tied regime, which Finding 8 calls into question.
 
-Caveats: the tight-gap slices are small (n=4 and n=9) -- treat effect sizes as directional;
-a larger scenario run is needed for stable numbers. The persona-mean near-tie sets again
-did NOT correspond to query-time ties (near-tie Δ = 0.000), confirming that gap-based
-subsetting, not mean-embedding clustering, defines the relevant regime.
+Caveats from the small run: the tight-gap slices were tiny (n=4 and n=9). The persona-mean
+near-tie sets did NOT correspond to query-time ties (near-tie Δ = 0.000), confirming that
+gap-based subsetting, not mean-embedding clustering, defines the relevant regime.
+
+## Scale run: the small-run positive reverses (2026-10-07, runs 111729Z / 113329Z)
+
+2x scale (200 real identities / 60 personas / 120 items, same seed and protocol,
+`--selective-gap 0.1`). Downsample ×0.1 queries: 230 embedded, 32 detection failures.
+
+| Method | overall hit@1 | gap <= 0.1 (n=27) | gap <= 0.05 (n=18) |
+|---|---|---|---|
+| face-only | **0.906** | **0.630** | **0.500** |
+| fused | 0.774 (−0.132) | 0.407 (−0.222) | **0.167 (−0.333)** |
+| selective (gate 0.1) | 0.849 (−0.057) | — | — |
+
+Control (downsample ×0.25): all methods ~0.983, fusion inert, gaps ~0.59. Context-noise
+sweep at ×0.1: fused delta degrades from −0.132 to −0.208 (noise 0.5); selective −0.057 to
+−0.085. "Fusion stops helping" is 0.0 for every scope.
+
+**Finding 8 — Honest negative at scale: this context model does not resolve face ties.**
+At n=18 genuine tight-gap queries, fused ranking is *below* face-only by −0.333 hit@1
+(0.500 -> 0.167) -- worse than the small run suggested, in the opposite direction. Fusion
+fails below the face-only baseline precisely where context was supposed to decide, and
+selective gating (face path outside gap <= 0.1) reduces but does not eliminate the damage
+(overall −0.057). Two candidate explanations to diagnose: (a) `context_score` handling of
+absent/drifted/noisy query context is misleading (only ~55% of queries carry clean
+truthful context at the configured rates), (b) score-scale mismatch -- under
+alpha=0.7/beta=0.3 a full context swing (1.0) overrides a face gap up to ~0.43, far wider
+than the tied regime the gate selects. Until the mechanism is diagnosed and fixed, the
+claim "context breaks face near-ties" is NOT supported on this data; what remains
+supported: the degradation/quality-gate findings (1-4), the tie-regime *definition*
+(gap-based subsetting), and the value of honest negative reporting (Findings 6-8).
