@@ -115,6 +115,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "(gallery evidence stays clean); the face-ambiguity regime for the fusion ablation",
     )
     parser.add_argument(
+        "--selective-gap",
+        type=float,
+        default=0.1,
+        help="gap gate for selective fusion (rank by fused score where the face "
+        "gap <= gate, by face elsewhere); negative disables selective fusion",
+    )
+    parser.add_argument(
         "--gap-thresholds",
         type=float,
         nargs="+",
@@ -400,13 +407,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"fusion profile {profile.name}: alpha={profile.alpha} beta={profile.beta}")
 
     try:
+        sel_gap = None if args.selective_gap < 0 else float(args.selective_gap)
         ablation = run_ambiguity_ablation(
             items, scorer, near_tie_sets, k=args.k,
             query_ids=query_ids, gap_thresholds=list(args.gap_thresholds),
+            selective_gap=sel_gap,
         )
         noise = run_context_noise_sweep(
             items, scorer, near_tie_sets, list(args.noise_rates), seed=int(args.seed),
-            k=args.k, query_ids=query_ids,
+            k=args.k, query_ids=query_ids, selective_gap=sel_gap,
         )
         weight_sweep = None
         if args.weight_ratios:
@@ -452,6 +461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             [query_degradation[0], float(query_degradation[1])] if query_degradation else None
         ),
         "gap_thresholds": [float(t) for t in args.gap_thresholds],
+        "selective_gap": (None if args.selective_gap < 0 else float(args.selective_gap)),
         "n_query_view_dropped": int(n_query_view_dropped),
         "noise_rates": [float(p) for p in args.noise_rates],
         "weight_ratios": [float(r) for r in args.weight_ratios] if args.weight_ratios else None,
@@ -488,6 +498,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                     ["ablation", method, scope, "", _fmt(m["hit_at_1"]), _fmt(m["hit_at_k"]),
                      _fmt(m["mrr"]), _fmt(m["n_queries"]), "", ""]
                 )
+        sel = ablation.get("selective")
+        if sel is not None:
+            for scope in ("overall", "near_tie"):
+                m = sel[scope]
+                d = ablation["selective_delta"][scope]
+                writer.writerow(
+                    ["ablation", "selective", scope, "", _fmt(m["hit_at_1"]), _fmt(m["hit_at_k"]),
+                     _fmt(m["mrr"]), _fmt(m["n_queries"]), _fmt(d["hit_at_1"]), _fmt(d["mrr"])]
+                )
         for t_key, block in ablation.get("gap_le", {}).items():
             for method in ("face_only", "fused"):
                 m = block[method]
@@ -519,6 +538,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"  ablation {method:<9} {scope:<8} hit@1={m['hit_at_1']:.3f} "
                     f"hit@{ablation['k']}={m['hit_at_k']:.3f} mrr={m['mrr']:.3f} n={m['n_queries']}"
                 )
+    sel = ablation.get("selective")
+    if sel is not None:
+        for scope in ("overall", "near_tie"):
+            m = sel[scope]
+            d = ablation["selective_delta"][scope]
+            if m["n_queries"]:
+                print(
+                    f"  ablation selective  {scope:<8} hit@1={m['hit_at_1']:.3f} "
+                    f"hit@{ablation['k']}={m['hit_at_k']:.3f} mrr={m['mrr']:.3f} "
+                    f"n={m['n_queries']} delta_hit@1={d['hit_at_1']:+.3f}"
+                )
     for t_key, block in ablation.get("gap_le", {}).items():
         fo, fu, d = block["face_only"], block["fused"], block["delta"]
         if block["n_queries"]:
@@ -541,8 +571,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"    rate={row['noise_rate']:<4} hit@1={m['hit_at_1']:.3f} "
                     f"mrr={m['mrr']:.3f} delta_hit@1={d['hit_at_1']:+.3f} n_corrupted={row['n_corrupted']}"
                 )
+    if any(r.get("selective") for r in noise["rows"]):
+        print("  selective noise sweep (delta_hit@1 vs face-only):")
+        for row in noise["rows"]:
+            sd = row.get("selective_delta")
+            if sd and sd["overall"]["hit_at_1"] is not None:
+                print(f"    rate={row['noise_rate']:<4} delta_hit@1={sd['overall']['hit_at_1']:+.3f}")
     first_neg = noise["first_negative_delta_rate"]
     print(f"  fusion stops helping at rate: overall={first_neg['overall']} near_tie={first_neg['near_tie']}")
+    sel_first = noise.get("selective_first_negative_delta_rate")
+    if sel_first is not None:
+        print(f"  selective stops helping at rate: overall={sel_first['overall']} near_tie={sel_first['near_tie']}")
     if weight_sweep is not None and weight_sweep["peak"] is not None:
         peak = weight_sweep["peak"]
         print(

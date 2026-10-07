@@ -490,3 +490,83 @@ def test_query_embedding_validation_errors():
     )
     with pytest.raises(ValueError, match="query_embedding"):
         run_ambiguity_ablation([good, zero], _scorer(), [])
+
+
+# ------------------------------------------------------------- selective (gap-gated) fusion
+
+
+def test_selective_fuses_tight_ties_and_faces_wide_gaps():
+    """Selective ranking takes the fused path exactly on tight-gap queries."""
+    r2 = float(np.sqrt(2.0))
+    tie_items = [
+        RankingItem(
+            "q", "pz", np.array([1.0, 1.0, 0.0]) / r2, ALPHA_CTX,
+            query_embedding=np.array([1.0, 0.0, 0.0]),
+        ),
+        RankingItem("z1", "pz", np.array([1.0, 1.0, 0.0]) / r2, ALPHA_CTX),
+        RankingItem("a1", "pa", np.array([1.0, -1.0, 0.0]) / r2, BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(
+        tie_items, _scorer(), [NearTieSet(("pz", "pa"), (), ())],
+        query_ids=["q"], selective_gap=0.05,
+    )
+    # tight tie (gap 0): selective takes the fused path -> resolves it
+    assert out["face_only"]["overall"]["hit_at_1"] == 0.0
+    assert out["selective"]["overall"]["hit_at_1"] == 1.0
+    assert out["selective_delta"]["overall"]["hit_at_1"] == pytest.approx(1.0)
+
+    # qa gap ~0.014 (tight), qb gap ~0.097 (wide): face-only 0.5, fused 1.0
+    mix_items = [
+        RankingItem("qa", "pa", np.array([1.0, 0.0]), ALPHA_CTX),
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("qb", "pa", np.array([0.0, 1.0]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(
+        mix_items, _scorer(), [], query_ids=["qa", "qb"], selective_gap=0.05,
+    )
+    assert out["face_only"]["overall"]["hit_at_1"] == 0.5
+    assert out["fused"]["overall"]["hit_at_1"] == 1.0
+    assert out["selective"]["overall"]["hit_at_1"] == 0.5  # fused on qa, face on qb
+    wide = run_ambiguity_ablation(
+        mix_items, _scorer(), [], query_ids=["qa", "qb"], selective_gap=0.5,
+    )
+    assert wide["selective"]["overall"]["hit_at_1"] == 1.0  # fused everywhere
+
+
+def test_selective_never_fuses_with_zero_gate_on_nonzero_gaps():
+    mix_items = [
+        RankingItem("qa", "pa", np.array([1.0, 0.0]), ALPHA_CTX),
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    out = run_ambiguity_ablation(mix_items, _scorer(), [], query_ids=["qa"], selective_gap=0.0)
+    # qa's gap is ~0.014 > 0 -> face path
+    assert out["selective"]["overall"] == out["face_only"]["overall"]
+
+
+def test_selective_noise_sweep_reports_blocks():
+    items = [
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    out = run_context_noise_sweep(items, _scorer(), [], [0.0, 0.5], seed=7, selective_gap=0.2)
+    assert out["selective_gap"] == 0.2
+    assert out["selective_first_negative_delta_rate"] is not None
+    for row in out["rows"]:
+        assert row["selective"] is not None
+        assert row["selective_delta"] is not None
+    without = run_context_noise_sweep(items, _scorer(), [], [0.0], seed=7)
+    assert without["rows"][0]["selective"] is None
+    assert without["selective_first_negative_delta_rate"] is None
+
+
+def test_selective_gap_validation():
+    items = [
+        RankingItem("ta", "pa", np.array([1.0, 0.1]), ALPHA_CTX),
+        RankingItem("ba", "pb", np.array([1.0, 0.2]), BETA_CTX),
+    ]
+    with pytest.raises(ValueError, match="selective_gap"):
+        run_ambiguity_ablation(items, _scorer(), [], selective_gap=-0.5)
+    with pytest.raises(ValueError, match="selective_gap"):
+        run_context_noise_sweep(items, _scorer(), [], [0.0], seed=1, selective_gap=float("inf"))

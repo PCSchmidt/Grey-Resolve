@@ -286,6 +286,14 @@ def _checked_k(k: int) -> int:
 # -------------------------------------------------------------------------- evidence
 
 
+def _checked_selective_gap(gap: float) -> float:
+    """Validate the selective-fusion gap gate: finite and >= 0."""
+    fg = float(gap)
+    if not np.isfinite(fg) or fg < 0:
+        raise ValueError("selective_gap must be finite and >= 0")
+    return fg
+
+
 def _checked_gap_thresholds(thresholds: Sequence[float]) -> tuple[float, ...]:
     """Validate gap cutoffs: finite, >= 0, ascending-unique order preserved."""
     out: list[float] = []
@@ -388,6 +396,25 @@ def _rank_personas(
         ]
     order = sorted(range(len(scores)), key=lambda i: (-scores[i], ev.candidate_ids[i]))
     return [ev.candidate_ids[i] for i in order]
+
+
+def _rank_selective(
+    ev: _QueryEvidence,
+    scorer: FusionScorer,
+    gap_gate: float,
+    query_context: ContextMetadata | None = None,
+) -> list[str]:
+    """Rank with gap-gated selective fusion.
+
+    Queries whose top-1-vs-top-2 face-score gap is <= ``gap_gate`` are ranked by
+    the fused score (the ambiguous regime where context decides); all others by
+    face cosine alone (context must not disturb clear face evidence). Queries
+    with fewer than 2 candidates have no gap and use face ranking.
+    """
+    gap = _face_gap(ev)
+    if gap is not None and gap <= gap_gate:
+        return _rank_personas(ev, scorer, "fused", query_context=query_context)
+    return _rank_personas(ev, None, "face")
 
 
 # --------------------------------------------------------------------------- aggregates
@@ -493,6 +520,7 @@ def run_ambiguity_ablation(
     k: int = 5,
     query_ids: Sequence[str] | None = None,
     gap_thresholds: Sequence[float] = (),
+    selective_gap: float | None = None,
 ) -> dict[str, Any]:
     """Face-only vs fused persona ranking on near-tie ambiguity sets.
 
@@ -513,6 +541,9 @@ def run_ambiguity_ablation(
             output includes metrics restricted to queries whose top-1 vs
             top-2 face-score gap is <= the cutoff ("gap_le" block) -- the
             actual-tie regime where fusion should matter.
+        selective_gap: optional gap gate for selective fusion: rank by fused
+            score where the query's face gap is <= the gate, by face cosine
+            elsewhere (``"selective"`` / ``"selective_delta"`` blocks).
 
     Returns:
         JSON-friendly dict with ``"k"``, ``"n_query_items"``, ``"n_skipped"``,
@@ -536,6 +567,7 @@ def run_ambiguity_ablation(
     ):
         raise TypeError("scorer must provide fuse() and context_score()")
     thresholds = _checked_gap_thresholds(gap_thresholds)
+    gate = None if selective_gap is None else _checked_selective_gap(selective_gap)
     evidence, n_skipped = _prepare(items, near_tie_sets, query_ids)
     truths = [ev.query.persona_id for ev in evidence]
     face_ranked = [_rank_personas(ev, None, "face") for ev in evidence]
@@ -563,12 +595,22 @@ def run_ambiguity_ablation(
                 for key in ("hit_at_1", "hit_at_k", "mrr")
             },
         }
+    selective_block = None
+    selective_delta = None
+    if gate is not None:
+        sel_ranked = [_rank_selective(ev, scorer, gate) for ev in evidence]
+        selective_block = _method_block(evidence, sel_ranked, kk, include_per_set=True)
+        face_block = _method_block(evidence, face_ranked, kk, include_per_set=False)
+        selective_delta = _delta_block(selective_block, face_block)
     return {
         "k": kk,
         "n_query_items": len(evidence),
         "n_skipped": int(n_skipped),
+        "selective_gap": gate,
         "face_only": _method_block(evidence, face_ranked, kk, include_per_set=True),
         "fused": _method_block(evidence, fused_ranked, kk, include_per_set=True),
+        "selective": selective_block,
+        "selective_delta": selective_delta,
         "gap_le": gap_le,
         "face_score_gap": {
             "overall": _gap_summary(evidence),
@@ -612,6 +654,7 @@ def run_context_noise_sweep(
     k: int = 5,
     query_ids: Sequence[str] | None = None,
     noise_kinds: Sequence[str] = NOISE_KINDS,
+    selective_gap: float | None = None,
 ) -> dict[str, Any]:
     """Sweep query-context corruption rates and report fused metrics vs face-only.
 
@@ -637,6 +680,9 @@ def run_context_noise_sweep(
         query_ids: optional query subset.
         noise_kinds: corruption kinds drawn uniformly per corrupted query
             (subset of ``NOISE_KINDS``; default both).
+        selective_gap: optional gap gate for selective fusion (see
+            :func:`run_ambiguity_ablation`); rows then also carry the
+            ``"selective"`` block and ``"selective_delta"`` vs face-only.
 
     Returns:
         JSON-friendly dict with ``"seed"``, ``"noise_kinds"``, ``"face_only"``
@@ -652,6 +698,7 @@ def run_context_noise_sweep(
         getattr(scorer, "context_score", None)
     ):
         raise TypeError("scorer must provide fuse() and context_score()")
+    gate = None if selective_gap is None else _checked_selective_gap(selective_gap)
     rates = [float(p) for p in noise_rates]
     if not rates:
         raise ValueError("noise_rates must be non-empty")
@@ -678,6 +725,7 @@ def run_context_noise_sweep(
 
     rows: list[dict[str, Any]] = []
     first_negative: dict[str, Any] = {"overall": None, "near_tie": None}
+    sel_first_negative: dict[str, Any] = {"overall": None, "near_tie": None}
     for p in rates:
         rng = np.random.default_rng([int(seed), round(p * 1_000_000)])
         overrides: dict[str, ContextMetadata] = {}
@@ -694,20 +742,36 @@ def run_context_noise_sweep(
             d = delta[scope]["hit_at_1"]
             if first_negative[scope] is None and d is not None and d < 0.0:
                 first_negative[scope] = float(p)
-        rows.append(
-            {
-                "noise_rate": float(p),
-                "n_corrupted": len(overrides),
-                "fused": fused_block,
-                "delta": delta,
-            }
-        )
+        row: dict[str, Any] = {
+            "noise_rate": float(p),
+            "n_corrupted": len(overrides),
+            "fused": fused_block,
+            "delta": delta,
+            "selective": None,
+            "selective_delta": None,
+        }
+        if gate is not None:
+            sel_ranked = [
+                _rank_selective(ev, scorer, gate, query_context=None if not overrides else overrides.get(ev.query.item_id))
+                for ev in evidence
+            ]
+            sel_block = _method_block(evidence, sel_ranked, kk, include_per_set=False)
+            sel_delta = _delta_block(sel_block, face_block)
+            for scope in ("overall", "near_tie"):
+                d = sel_delta[scope]["hit_at_1"]
+                if sel_first_negative[scope] is None and d is not None and d < 0.0:
+                    sel_first_negative[scope] = float(p)
+            row["selective"] = sel_block
+            row["selective_delta"] = sel_delta
+        rows.append(row)
     return {
         "seed": int(seed),
         "noise_kinds": list(kinds),
+        "selective_gap": gate,
         "face_only": face_block,
         "rows": rows,
         "first_negative_delta_rate": first_negative,
+        "selective_first_negative_delta_rate": sel_first_negative if gate is not None else None,
     }
 
 
