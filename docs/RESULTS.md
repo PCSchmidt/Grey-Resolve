@@ -130,3 +130,42 @@ now resolved adaptively at the 98th quantile of measured cross-persona cosines.
 (ii) If synthetic personas share source images, "ties" are duplicate-photo artifacts
 (cosine exactly 1.0) and the face-only baseline always loses them; the CLI now warns and
 the evidence run uses disjoint source images per persona.
+
+## Degraded-query ablation (2026-10-07, runs 012020Z / 012245Z / 012503Z)
+
+Same seeded scenario (30 personas, disjoint source images) as the clean run above; query
+photos degraded before embedding while gallery evidence stays clean. The face-gap subsets
+(`gap_le`) restrict to queries whose top-1-vs-top-2 face-score gap is <= the cutoff --
+the actual-tie regime.
+
+| Query condition | Scope | Face-only hit@1 | Fused hit@1 | Δ |
+|---|---|---|---|---|
+| downsample ×0.25 | overall | 1.000 | 1.000 | +0.000 |
+| blur σ=3 | overall | 1.000 | 1.000 | +0.000 |
+| downsample ×0.1 | overall | 0.904 | 0.865 | **−0.038** |
+| downsample ×0.1 | gap ≤ 0.2 (n=26) | 0.808 | 0.808 | +0.000 |
+| downsample ×0.1 | gap ≤ 0.1 (n=9) | 0.667 | 0.778 | **+0.111** |
+| downsample ×0.1 | gap ≤ 0.05 (n=4) | 0.500 | 0.750 | **+0.250** |
+
+MRR on the tightest slice: 0.559 → 0.760. Detection failures under ×0.1: 18/60 (excluded
+and counted). Context-noise sweep (×0.1): fused delta vs face-only is −0.038 at noise 0.0
+and degrades to −0.115 at noise 0.4.
+
+**Finding 7 — Context fusion resolves exactly the ambiguous-tie regime, and costs
+accuracy elsewhere.** On genuinely ambiguous queries (face gap <= 0.05), fused ranking
+beats face-only by +0.25 hit@1 (n=4) and +0.11 at gap <= 0.1 (n=9); where face evidence
+is clear (gap > 0.2) fusion does nothing (Δ = 0.000); and applied indiscriminately it
+slightly *hurts* (overall Δ = −0.038), worsening as context noise rises. Mild degradation
+(downsample ×0.25, blur σ=3) never creates ambiguity at all (face gaps stay ~0.55-0.59,
+fusion inert) — consistent with Finding 4 that score compression, not ranking collapse,
+dominates until degradation is severe.
+
+**Design consequence — fusion must be selective.** The correct architecture is the one
+`ARCHITECTURE.md` sketched: fuse only inside the ambiguous band, rank by face outside it.
+A band-gated fusion scorer should capture the +0.25 without paying the −0.04. This is
+planned work, not yet implemented.
+
+Caveats: the tight-gap slices are small (n=4 and n=9) -- treat effect sizes as directional;
+a larger scenario run is needed for stable numbers. The persona-mean near-tie sets again
+did NOT correspond to query-time ties (near-tie Δ = 0.000), confirming that gap-based
+subsetting, not mean-embedding clustering, defines the relevant regime.
