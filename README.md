@@ -26,13 +26,36 @@ Grey-Resolve studies two engineering responses:
 
 ## Status
 
-Early development. Current phase: **Phase 1 — core pipeline** (see [`PLAN.md`](PLAN.md)).
-
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Backbone + FIQA gate + FAISS/HNSW + SQLite metadata + degraded-input ROC benchmarks | in progress |
-| 2 | Synthetic scenario generator + contextual fusion scorer + ablation | planned |
-| 3 | Docker Compose + Qdrant migration path + ONNX/INT8 + latency profiling | stretch |
+| 1 | Backbone + FIQA gate + FAISS/HNSW + SQLite metadata + degraded-input ROC benchmarks | **complete** |
+| 2 | Synthetic scenario generator + contextual fusion + honest ablation | **complete** (honest negative) |
+| 3 | Docker + Qdrant migration path + figures + latency profiling | in progress |
+
+Full findings with numbers and limitations: [`docs/RESULTS.md`](docs/RESULTS.md).
+Figures generated from the run artifacts: [`docs/figures/`](docs/figures/).
+
+## What this project demonstrates
+
+Beyond the pipeline itself, the engineering story is in the evaluation:
+
+- **Operational benchmarking, not accuracy percentages.** EER, FMR/FNMR and ROC curves
+  per degradation type (blur, downsampling, brightness, rotation), from one command,
+  with detection failures counted per condition rather than hidden. Headline: EER stays
+  near zero until degradation is severe (blur σ=8: EER 0.078) while FMR@FNMR=1%
+  explodes (downsample ×0.1: 0.873) — ranking quality and operating-point calibration
+  are different problems.
+- **A quality gate that measurably helps.** FIQA-gated scoring lowers FNMR at a fixed
+  threshold in nearly every condition and never materially worsens it.
+- **Honest negative science on the fusion hypothesis.** The project's central claim —
+  that contextual metadata resolves face-recognition near-ties — was tested at scale and
+  is *not supported* on this data with the tested context model. Raw fusion actively
+  harms ties (−0.33 hit@1 on the tightest slice); the failure mechanism was diagnosed
+  (extreme-value noise from many competing context scores) and a guarded top-2 tiebreak
+  design is provably safe but neutral. Findings 6–9 in
+  [`docs/RESULTS.md`](docs/RESULTS.md) document the full arc, including the small-n
+  positive result that did not replicate. This is the kind of evaluation honesty that
+  matters in mission-critical ML — and it is reproducible from committed scripts.
 
 ## Repository structure
 
