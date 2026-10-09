@@ -578,9 +578,12 @@ function buildScene(ctx, container, renderer) {
       payload?.chosen ?? payload?.selected ?? payload?.decision);
   }
 
-  /** Fabricated ground truth (if the payload exposes it): delayed resolution winner. */
+  /**
+   * Delayed resolution winner: the tiebreak's pick when the payload carries
+   * one (it may be wrong), else the fabricated ground truth.
+   */
   function tieGroundTruth(payload) {
-    return normId(payload?.groundTruth ?? payload?.truth);
+    return normId(payload?.pick ?? payload?.groundTruth ?? payload?.truth);
   }
 
   /** Open an animated dashed tie line between (up to 3) clusters. */

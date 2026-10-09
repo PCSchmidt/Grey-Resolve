@@ -456,6 +456,8 @@ body {
     0 0 18px rgba(103, 217, 255, 0.35);
 }
 
+.verdict-bad { color: var(--red); }
+
 /* Scanline / vignette overlays ------------------------------------------ */
 
 .scanlines {

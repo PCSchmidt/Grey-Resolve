@@ -9,6 +9,7 @@
  *   - createBus()      : tiny event bus ({on, emit}) shared by all demo modules.
  *   - createDemoData() : seeded (seed 1337) demo dataset: personas, queries,
  *                        contacts, and measured run metrics.
+ *   - fusedScore() / ALPHA / BETA : demo fusion rule shared with the resolver.
  *   - init(ctx)        : contract entry point; ensures run hydration is running.
  *   - mulberry32() / hashSeed() : deterministic PRNG helpers (used by sibling
  *                        demo modules for procedural tiles).
@@ -89,6 +90,20 @@ export function createBus() {
       }
     },
   };
+}
+
+/** Fusion weights, profile strict_surveillance (face / context). */
+export const ALPHA = 0.7;
+export const BETA = 0.3;
+
+/**
+ * Fused score for one tie candidate (alpha face + beta context mean).
+ * Context mean is 0 when context is absent.
+ */
+export function fusedScore(candidate) {
+  const c = candidate.context;
+  const ctxMean = c ? (c.geoScore + c.timeScore + c.entityScore) / 3 : 0;
+  return ALPHA * candidate.faceScore + BETA * ctxMean;
 }
 
 /** Context triple used by tie-break rows (values are synthetic labels). */
@@ -271,9 +286,13 @@ async function hydrateRuns(data) {
  * Shapes:
  *   personas : 12 x {id, label, hue, centroid3d:[x,y,z]}
  *   queries  : feed/resolver queries encoding the real finding states:
- *              clean-context ties that resolve, ties where
- *              "TIEBREAK: CONTEXT DID NOT DECIDE", detection failures (REJECT),
- *              and clear-gap contacts (no tiebreak).
+ *              clean-context ties that confirm face #1 or correctly flip it,
+ *              misleading-context ties that flip a correct face #1 to the
+ *              wrong candidate (the at-scale failure mode -- the real tiebreak
+ *              has no misleading-context detector), absent-context ties where
+ *              face order is kept, detection failures (REJECT), and clear-gap
+ *              contacts (no tiebreak). Each tie carries `pick`, the persona the
+ *              top-2 tiebreak actually ranks first.
  *   contacts : deterministic feed stream sequence referencing queries.
  *   runs     : measured metrics -- real sanitized run values when fetchable,
  *              else embedded honest constants from docs/RESULTS.md.
@@ -394,27 +413,51 @@ export function createDemoData() {
       gap: null, contextState: 'absent', groundTruth: null,
       candidates: [],
     },
+    {
+      // Clean context overturns a wrong face #1 -- the case the tiebreak exists for.
+      id: 'Q-13', condition: 'gaussian_blur s8', trust: 'LOW', quality: 0.36,
+      gap: 0.022, contextState: 'clean', groundTruth: 'syn-id-0002',
+      candidates: [
+        cand('syn-id-0012', 0.366, ctx3('GRID-30', 0.3, 'T-21:16Z', 0.27, 'EVT-064', 0.33)),
+        cand('syn-id-0002', 0.344, ctx3('GRID-09', 0.81, 'T-10:05Z', 0.76, 'EVT-187', 0.72)),
+      ],
+    },
   ];
 
-  // Annotate each query with its real finding-state verdict.
+  // Annotate each query with its real finding-state verdict. Tie outcomes are
+  // computed with the same rule as the real top-2 tiebreak: skip when context
+  // is absent, otherwise the higher fused score ranks first.
   for (const q of queries) {
     if (q.trust === 'REJECT') {
       q.outcome = 'detect-fail';
       q.verdict = 'DETECTION FAILURE -- NO FACE FOUND (SCRFD)';
     } else if (q.gap != null && q.gap <= 0.1) {
-      const decided = q.contextState === 'clean';
-      q.outcome = decided ? 'resolved' : 'kept-order';
-      q.verdict = decided
-        ? 'TIEBREAK: CONTEXT DECIDED'
-        : 'TIEBREAK: CONTEXT DID NOT DECIDE -- FACE ORDER KEPT';
+      const [a, b] = q.candidates;
+      if (q.contextState === 'absent') {
+        q.pick = a.personaId;
+        q.outcome = 'kept-order';
+        q.verdict = 'TIEBREAK: CONTEXT ABSENT -- FACE ORDER KEPT';
+      } else if (fusedScore(b) <= fusedScore(a)) {
+        q.pick = a.personaId;
+        q.outcome = 'confirmed';
+        q.verdict = 'TIEBREAK: CONTEXT CONFIRMED FACE #1';
+      } else {
+        q.pick = b.personaId;
+        const correct = q.pick === q.groundTruth;
+        q.outcome = correct ? 'flipped-correct' : 'flipped-wrong';
+        q.verdict = correct
+          ? 'TIEBREAK: CONTEXT FLIPPED FACE #1 -- CORRECT'
+          : 'TIEBREAK: CONTEXT FLIPPED FACE #1 -- WRONG';
+      }
     } else {
       q.outcome = 'clear';
       q.verdict = 'FACE RANK CLEAR -- NO TIEBREAK';
     }
   }
 
-  // Deterministic feed sequence (cycles).
-  const order = ['Q-06', 'Q-01', 'Q-03', 'Q-08', 'Q-10', 'Q-02', 'Q-12', 'Q-04', 'Q-07', 'Q-09', 'Q-05', 'Q-11'];
+  // Deterministic feed sequence (cycles). Ties are interleaved with non-ties;
+  // the feed also holds a tie back until the resolver has finished the last one.
+  const order = ['Q-06', 'Q-01', 'Q-03', 'Q-13', 'Q-10', 'Q-09', 'Q-02', 'Q-12', 'Q-05', 'Q-08', 'Q-07', 'Q-04', 'Q-11'];
   const contacts = order.map((queryId, i) => ({
     id: `C-${String(i + 1).padStart(4, '0')}`,
     seq: i,

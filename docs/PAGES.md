@@ -21,6 +21,26 @@ manifold with near-tie resolution, live degradation modes, and telemetry sourced
 the sanitized real run artifacts in `docs/results/`. Everything is fabricated demo data
 except the metric values, which trace to committed run outputs (see `docs/RESULTS.md`).
 
+## Reading the Resolver (near-ties, gap <= 0.1)
+
+The feed replays 13 scripted queries; 8 are near-ties. Each tie plays face bars, then
+GEO/TIME/ENTITY context rows, then **FUSED** bars computed truthfully
+(0.7 x face + 0.3 x mean context). The verdict is the real top-2 tiebreak rule applied
+to those numbers, so the bars and the verdict never disagree:
+
+| Verdict | Meaning |
+|---|---|
+| `CONTEXT CONFIRMED FACE #1` | clean context agrees with the face order; nothing changes |
+| `CONTEXT FLIPPED FACE #1 -- CORRECT` | clean context overturns a wrong face #1 (Q-13) |
+| `CONTEXT FLIPPED FACE #1 -- WRONG` | misleading context pulls a correct face #1 away (Q-09, Q-05) |
+| `CONTEXT ABSENT -- FACE ORDER KEPT` | no context is no evidence; face order is untouched |
+
+Correct and wrong flips are both shown on purpose: at scale they roughly cancel
+(tiebreak hit@1 0.444 vs face-only 0.500 at gap <= 0.05, n=18; `docs/RESULTS.md`).
+Timing: the feed holds a tie contact back until the resolver has finished the previous
+tie (`VERDICT_AT_MS` + `VERDICT_HOLD_MS` in `panels.js`), so no verdict is cut off.
+A headless run over two feed cycles reached all 8 verdicts with no page errors.
+
 ## Content policy (do not weaken)
 
 - No face imagery anywhere in the UI (procedural abstract tiles only) — model-weight and

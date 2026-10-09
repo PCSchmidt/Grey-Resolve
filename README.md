@@ -58,7 +58,8 @@ The thing that makes it more than a face-matching demo:
 You can drive it three ways:
 
 1. **The published console** — boot sequence, streaming synthetic contacts with
-   trust badges, a 3D embedding manifold with tie-break resolution sequences, live
+   trust badges, a 3D embedding manifold with tie-break resolution sequences (context
+   confirms, correctly flips, wrongly flips, or is absent — shown honestly), live
    degradation modes driven by the project's own operators, and a telemetry ticker
    sourced from real run artifacts.
 2. **The evaluation suites** — `.venv/Scripts/python -m pytest -q` (241 tests),

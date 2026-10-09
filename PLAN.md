@@ -82,6 +82,8 @@ Acceptance criteria:
   single-page demo on GitHub Pages — streaming synthetic contacts with trust badges,
   3D embedding manifold with tie-break resolution sequences, live degradation modes
   (the project's own operators), telemetry from sanitized real runs.
+- Resolver shows confirmed / correct flip / wrong flip / absent outcomes with truthful
+  fused bars; the feed queues ties so each verdict completes (see `docs/PAGES.md`).
 - Constraints held: zero face imagery (procedural tiles only), persistent synthetic
   banner, no identification language, no build step (vanilla ESM + three.js CDN).
 

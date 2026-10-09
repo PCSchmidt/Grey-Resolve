@@ -5,12 +5,14 @@
  *   #feed     : streaming synthetic contact cards (~1.8 s cadence) with
  *               procedural canvas thumbnails, detection-box overlay, trust
  *               badge and quality bar. Emits 'contact' per card and 'tie' when
- *               a query has gap <= 0.1.
+ *               a query has gap <= 0.1. A tie contact is held back until the
+ *               resolver has finished the previous tie, so none is cut off.
  *   #resolver : on 'tie' events runs the tie-break sequence -- face bars race
  *               neck-and-neck, context rows (GEO/TIME/ENTITY) light up, the
- *               fused bar resolves and the winner flashes. When context is
- *               absent/misleading it shows the honest
- *               "TIEBREAK: CONTEXT DID NOT DECIDE -- FACE ORDER KEPT" state.
+ *               fused bars show the true fused scores and the tiebreak's pick
+ *               flashes. Outcomes: context confirms face #1, flips it correctly,
+ *               flips it WRONG (misleading context -- the real tiebreak cannot
+ *               tell), or is absent and face order is kept.
  *               On 'select-persona' it shows a small dossier block.
  *   #ticker   : scrolling telemetry strip with real measured numbers and the
  *               source run ids.
@@ -19,12 +21,14 @@
  *   gradients, silhouette blobs), no faces, no external images.
  */
 
-import { mulberry32, hashSeed } from './data.js';
+import { mulberry32, hashSeed, ALPHA, BETA, fusedScore } from './data.js';
+
+export { fusedScore };
 
 const FEED_INTERVAL_MS = 1800;
 const MAX_FEED_CARDS = 14;
-const ALPHA = 0.7; // face weight, profile strict_surveillance
-const BETA = 0.3; // context weight
+const VERDICT_AT_MS = 2800; // tie sequence: verdict appears
+const VERDICT_HOLD_MS = 2600; // ... and stays readable before the next tie may start
 
 /** Create a DOM element with optional class list string. */
 function el(tag, className) {
@@ -162,16 +166,6 @@ export function buildTickerText(runs) {
 }
 
 /**
- * Compute the fused score for one tie candidate (alpha face + beta context).
- * Exported for reuse/testing. Context mean is 0 when context is absent.
- */
-export function fusedScore(candidate) {
-  const c = candidate.context;
-  const ctxMean = c ? (c.geoScore + c.timeScore + c.entityScore) / 3 : 0;
-  return ALPHA * candidate.faceScore + BETA * ctxMean;
-}
-
-/**
  * Initialize the HUD panels.
  * @param {{bus: {on: Function, emit: Function}, data: object}} ctx
  * @returns {{destroy: () => void}|null} cleanup handle (null when DOM missing)
@@ -257,7 +251,12 @@ export function init(ctx) {
     return card;
   }
 
+  const isTie = (query) => query.gap != null && query.gap <= 0.1;
+
   let feedIndex = 0;
+  let feedTimer = 0;
+  let resolverFreeAt = 0; // performance.now() time the current tie sequence ends
+
   function pushContact() {
     const contact = data.contacts[feedIndex % data.contacts.length];
     feedIndex += 1;
@@ -270,13 +269,21 @@ export function init(ctx) {
     }
 
     bus.emit('contact', { contact, query });
-    if (query.gap != null && query.gap <= 0.1) {
+    if (isTie(query)) {
       bus.emit('tie', query);
     }
   }
 
-  pushContact();
-  const feedTimer = setInterval(pushContact, FEED_INTERVAL_MS);
+  /** Self-scheduling feed: a tie contact waits until the resolver is free. */
+  function scheduleFeed() {
+    const next = queryById.get(data.contacts[feedIndex % data.contacts.length].queryId);
+    let delay = FEED_INTERVAL_MS;
+    if (next && isTie(next)) delay = Math.max(delay, resolverFreeAt - performance.now());
+    feedTimer = setTimeout(() => {
+      pushContact();
+      scheduleFeed();
+    }, delay);
+  }
 
   // ------------------------------------------------------------ resolver --
   const resPanel = el('div', 'panel');
@@ -287,7 +294,7 @@ export function init(ctx) {
   const stage = el('div');
   const idle = el('div', 'mono');
   idle.textContent =
-    'AWAITING AMBIGUOUS CONTACT ... gap<=0.1 triggers tie-break sequence ... ALL DATA SYNTHETIC';
+    'AWAITING AMBIGUOUS CONTACT ... gap<=0.1 triggers tie-break sequence ... outcomes are scripted: confirmed / flipped correct / flipped wrong / absent ... ALL DATA SYNTHETIC';
   stage.append(idle);
   resPanel.append(resTitle, dossier, stage);
   resolverEl.append(resPanel);
@@ -327,6 +334,7 @@ export function init(ctx) {
   function playTie(query) {
     clearTie();
     stage.innerHTML = '';
+    resolverFreeAt = performance.now() + VERDICT_AT_MS + VERDICT_HOLD_MS;
 
     const head = el('div', 'mono glow');
     head.textContent = `TIE DETECTED // ${query.id} // gap ${query.gap.toFixed(3)} // ${query.condition} // SYNTHETIC`;
@@ -364,40 +372,58 @@ export function init(ctx) {
       }, 1300 + i * 450);
     });
 
-    // Fused resolution.
+    // Fused resolution. Bars always show the true fused scores; the pick is
+    // the persona the real top-2 tiebreak rule ranks first (data.js).
     later(() => {
-      const fused = top2.map((c) => fusedScore(c));
-      rows.forEach((r, i) => {
-        const b = barEl(fused[i], `FUSED ${fused[i].toFixed(3)}`);
-        r.row.append(b.wrap);
-        if (query.contextState !== 'clean') b.fill.style.width = `${(r.cand.faceScore * 100).toFixed(1)}%`;
+      const absent = query.contextState === 'absent';
+      rows.forEach((r) => {
+        if (absent) {
+          const skip = el('div', 'mono');
+          skip.textContent = 'FUSED -- skipped: no context, no evidence';
+          r.row.append(skip);
+        } else {
+          const fused = fusedScore(r.cand);
+          r.row.append(barEl(fused, `FUSED ${fused.toFixed(3)}`).wrap);
+        }
       });
 
-      const decided = query.contextState === 'clean';
-      const winnerIdx = decided
-        ? (fused[0] >= fused[1] ? 0 : 1)
-        : (top2[0].faceScore >= top2[1].faceScore ? 0 : 1);
-
-      const verdict = el('div', decided ? 'blink glow mono' : 'blink mono');
-      verdict.textContent = decided
-        ? `TIEBREAK: CONTEXT DECIDED -- ${top2[winnerIdx].label} PROMOTED`
-        : 'TIEBREAK: CONTEXT DID NOT DECIDE -- FACE ORDER KEPT';
+      const winnerIdx = top2[1].personaId === query.pick ? 1 : 0;
+      const wrong = query.outcome === 'flipped-wrong';
+      const good = query.outcome === 'confirmed' || query.outcome === 'flipped-correct';
+      const verdict = el('div', `blink mono${good ? ' glow' : ''}${wrong ? ' verdict-bad' : ''}`);
+      verdict.textContent = `${query.verdict} -- ${top2[winnerIdx].label} RANKED #1`;
       stage.append(verdict);
 
+      if (winnerIdx === 1) {
+        const truth = el('div', `mono${wrong ? ' verdict-bad' : ''}`);
+        const gt = personaById.get(query.groundTruth);
+        truth.textContent = `synthetic ground truth: ${gt ? gt.label : query.groundTruth}${
+          wrong ? ' -- misleading context pulled the decision away from the correct face #1' : ''
+        }`;
+        stage.append(truth);
+      }
+
       const note = el('div', 'mono');
-      note.textContent = decided
-        ? `evidence-only top-2 decision (alpha ${ALPHA} face / beta ${BETA} context) -- SYNTHETIC`
-        : 'guarded tiebreak, run 557189Z: hit@1 0.444 at gap<=0.05 (n=18) vs face-only 0.500 -- context signal too weak on this data';
+      note.textContent = {
+        confirmed: `context agrees with face #1; order unchanged (alpha ${ALPHA} face / beta ${BETA} context) -- SYNTHETIC`,
+        'flipped-correct': 'run 557189Z at scale: correct and wrong flips roughly cancel -- tiebreak hit@1 0.444 vs face-only 0.500 at gap<=0.05 (n=18)',
+        'flipped-wrong': 'the tiebreak cannot tell misleading context from clean -- run 557189Z: hit@1 0.444 vs face-only 0.500 at gap<=0.05 (n=18)',
+        'kept-order': 'absent context is no evidence: the tiebreak never disturbs face order without it',
+      }[query.outcome] || '';
       stage.append(note);
 
       rows[winnerIdx].row.classList.add('glow');
       later(() => rows[winnerIdx].row.classList.remove('glow'), 1600);
-    }, 2800);
+    }, VERDICT_AT_MS);
   }
 
   bus.on('tie', (query) => {
     if (query && query.candidates && query.candidates.length >= 2) playTie(query);
   });
+
+  // Start the feed only once the resolver is listening for ties.
+  pushContact();
+  scheduleFeed();
 
   // ------------------------------------------------------ persona select --
   bus.on('select-persona', (payload) => {
@@ -476,7 +502,7 @@ export function init(ctx) {
 
   return {
     destroy() {
-      clearInterval(feedTimer);
+      clearTimeout(feedTimer);
       clearTie();
       if (tickRaf) cancelAnimationFrame(tickRaf);
     },
